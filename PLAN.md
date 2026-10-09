@@ -19,7 +19,7 @@ task ships as exactly one atomic commit.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 1 | Repository skeleton and project board | `chore: add repository skeleton and project board` | done |
-| 2 | Agent instructions and Claude Code settings | `docs: add agent instructions and Claude Code settings` | todo |
+| 2 | Agent instructions and Claude Code settings | `docs: add agent instructions and Claude Code settings` | done |
 | 3 | Commit and docs skills | `docs: add commit and docs skills` | todo |
 | 4 | Conventions skill and conventions overview | `docs: add conventions skill and conventions overview` | todo |
 | 5 | Scaffold and review skills | `docs: add scaffold and review skills` | todo |
