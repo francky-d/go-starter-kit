@@ -57,7 +57,9 @@ The same commands are available from the compiled binary, for example in a
 deployment job: `migrate up`, `migrate down [steps]`, `migrate version`,
 `migrate force <version>`. Asking `down` for more steps than were applied
 rolls every migration back and succeeds. Like the API, the command gives
-up after `DB_CONNECT_TIMEOUT` when the database is unreachable.
+up after `DB_CONNECT_TIMEOUT` when the database is unreachable. It reads
+only `DATABASE_URL` and the `DB_*` variables, so a migration job needs no
+API secret.
 
 ### Applying migrations at startup
 

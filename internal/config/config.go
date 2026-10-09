@@ -73,17 +73,51 @@ type Database struct {
 }
 
 type Auth struct {
-	BcryptCost int `env:"BCRYPT_COST" envDefault:"12"`
+	BcryptCost          int           `env:"BCRYPT_COST" envDefault:"12"`
+	JWTSecret           string        `env:"JWT_SECRET"`
+	JWTIssuer           string        `env:"JWT_ISSUER" envDefault:"go-starter-kit"`
+	AccessTokenLifetime time.Duration `env:"ACCESS_TOKEN_LIFETIME" envDefault:"15m"`
 }
+
+// MinJWTSecretBytes matches the HS256 key size: a shorter secret weakens the
+// signature.
+const MinJWTSecretBytes = 32
 
 // Load reads the optional .env file, then the environment. A variable
 // already set in the environment always wins over the .env file.
 func Load() (Config, error) {
-	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return Config{}, fmt.Errorf("config: read .env file: %w", err)
+	if err := loadDotEnv(); err != nil {
+		return Config{}, err
 	}
 
 	return FromEnvironment()
+}
+
+// LoadDatabase reads the database settings only, for tools such as the
+// migrate command that need neither the HTTP settings nor the secrets.
+func LoadDatabase() (Database, error) {
+	if err := loadDotEnv(); err != nil {
+		return Database{}, err
+	}
+
+	database, err := env.ParseAs[Database]()
+	if err != nil {
+		return Database{}, fmt.Errorf("config: %w", err)
+	}
+
+	if err := database.validate(); err != nil {
+		return Database{}, fmt.Errorf("config: invalid configuration: %w", err)
+	}
+
+	return database, nil
+}
+
+func loadDotEnv() error {
+	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("config: read .env file: %w", err)
+	}
+
+	return nil
 }
 
 func FromEnvironment() (Config, error) {
@@ -164,5 +198,10 @@ func (d Database) validate() error {
 // doubles the time, and the hasher computes one hash at startup. Tests use
 // the minimum of 4 to stay fast.
 func (a Auth) validate() error {
-	return mustBeBetween("BCRYPT_COST", a.BcryptCost, 4, 16)
+	return errors.Join(
+		mustBeBetween("BCRYPT_COST", a.BcryptCost, 4, 16),
+		mustBeLongSecret("JWT_SECRET", a.JWTSecret, MinJWTSecretBytes),
+		mustNotBeBlank("JWT_ISSUER", a.JWTIssuer),
+		mustBePositive("ACCESS_TOKEN_LIFETIME", a.AccessTokenLifetime),
+	)
 }

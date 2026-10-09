@@ -43,6 +43,23 @@ func mustBePositive(variable string, value time.Duration) error {
 	return fmt.Errorf("%s must be positive, got %s", variable, value)
 }
 
+// mustBeLongSecret never quotes the value: it is a secret.
+func mustBeLongSecret(variable, value string, minimumBytes int) error {
+	if len(value) >= minimumBytes {
+		return nil
+	}
+
+	return fmt.Errorf("%s must be at least %d bytes long", variable, minimumBytes)
+}
+
+func mustNotBeBlank(variable, value string) error {
+	if strings.TrimSpace(value) != "" {
+		return nil
+	}
+
+	return fmt.Errorf("%s must not be empty", variable)
+}
+
 // trimEach tolerates spaces around the items of a comma-separated list.
 func trimEach(values []string) []string {
 	trimmed := make([]string, 0, len(values))

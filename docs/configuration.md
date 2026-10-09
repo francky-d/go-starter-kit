@@ -103,6 +103,9 @@ Use `sslmode=require` (or stricter) in production.
 | Variable | Default | Description |
 | --- | --- | --- |
 | `BCRYPT_COST` | `12` | bcrypt work factor for password hashes, from 4 to 16. Each step doubles the time to hash and to verify a password; keep at least 12 in production. |
+| `JWT_SECRET` | none, required | Key that signs the access tokens, at least 32 bytes and random. Generate it with `openssl rand -hex 32` and keep all 64 hex characters; use a different one per environment and never commit it. Changing it invalidates every access token already issued. |
+| `JWT_ISSUER` | `go-starter-kit` | Written into every access token; a token from another issuer is refused. |
+| `ACCESS_TOKEN_LIFETIME` | `15m` | How long an access token stays valid. Keep it short: an access token cannot be revoked before it expires. |
 
 ### Logging
 

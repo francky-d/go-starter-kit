@@ -24,13 +24,16 @@ var knownVariables = []string{
 	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
 	"DB_AUTO_MIGRATE",
-	"BCRYPT_COST",
+	"BCRYPT_COST", "JWT_SECRET", "JWT_ISSUER", "ACCESS_TOKEN_LIFETIME",
 }
 
-const databaseURL = "postgres://app:app@localhost:5432/app?sslmode=disable"
+const (
+	databaseURL = "postgres://app:app@localhost:5432/app?sslmode=disable"
+	jwtSecret   = "a-test-secret-that-is-at-least-32-bytes-long"
+)
 
-// clearEnvironment unsets every known variable, then sets the only
-// required one so each test starts from a valid configuration.
+// clearEnvironment unsets every known variable, then sets the ones without
+// a default so each test starts from a valid configuration.
 func clearEnvironment(t *testing.T) {
 	t.Helper()
 	for _, name := range knownVariables {
@@ -38,6 +41,7 @@ func clearEnvironment(t *testing.T) {
 		require.NoError(t, os.Unsetenv(name))
 	}
 	t.Setenv("DATABASE_URL", databaseURL)
+	t.Setenv("JWT_SECRET", jwtSecret)
 }
 
 func TestFromEnvironment_AppliesDefaults(t *testing.T) {
@@ -69,6 +73,9 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, 200*time.Millisecond, cfg.Database.SlowQueryThreshold)
 	assert.False(t, cfg.Database.AutoMigrate)
 	assert.Equal(t, 12, cfg.Auth.BcryptCost)
+	assert.Equal(t, jwtSecret, cfg.Auth.JWTSecret)
+	assert.Equal(t, "go-starter-kit", cfg.Auth.JWTIssuer)
+	assert.Equal(t, 15*time.Minute, cfg.Auth.AccessTokenLifetime)
 }
 
 func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
@@ -79,6 +86,17 @@ func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "DATABASE_URL")
+}
+
+func TestFromEnvironment_RequiresAJWTSecretWithoutQuotingIt(t *testing.T) {
+	clearEnvironment(t)
+	t.Setenv("JWT_SECRET", "too-short-secret")
+
+	_, err := config.FromEnvironment()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "JWT_SECRET must be at least 32 bytes long")
+	assert.NotContains(t, err.Error(), "too-short-secret")
 }
 
 func TestFromEnvironment_ReadsVariables(t *testing.T) {
@@ -129,6 +147,9 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"origin with a path", "CORS_ALLOWED_ORIGINS", "https://app.example.com/login", "CORS_ALLOWED_ORIGINS"},
 		{"bcrypt cost too low", "BCRYPT_COST", "3", "BCRYPT_COST"},
 		{"bcrypt cost too high", "BCRYPT_COST", "17", "BCRYPT_COST"},
+		{"missing JWT secret", "JWT_SECRET", "", "JWT_SECRET"},
+		{"blank JWT issuer", "JWT_ISSUER", " ", "JWT_ISSUER"},
+		{"zero access token lifetime", "ACCESS_TOKEN_LIFETIME", "0s", "ACCESS_TOKEN_LIFETIME"},
 	}
 
 	for _, tc := range cases {
@@ -187,4 +208,27 @@ func TestLoad_WorksWithoutDotEnvFile(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "go-starter-kit", cfg.App.Name)
+}
+
+func TestLoadDatabase_NeedsOnlyTheDatabaseVariables(t *testing.T) {
+	clearEnvironment(t)
+	require.NoError(t, os.Unsetenv("JWT_SECRET"))
+	t.Chdir(t.TempDir())
+
+	database, err := config.LoadDatabase()
+
+	require.NoError(t, err)
+	assert.Equal(t, databaseURL, database.URL)
+	assert.Equal(t, 5*time.Second, database.ConnectTimeout)
+}
+
+func TestLoadDatabase_RejectsInvalidDatabaseSettings(t *testing.T) {
+	clearEnvironment(t)
+	t.Setenv("DB_MAX_OPEN_CONNECTIONS", "0")
+	t.Chdir(t.TempDir())
+
+	_, err := config.LoadDatabase()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "DB_MAX_OPEN_CONNECTIONS")
 }

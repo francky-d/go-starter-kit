@@ -16,6 +16,14 @@ make docker-up
 make test
 ```
 
+Before running the API, set `JWT_SECRET` in `.env` to a random value of at
+least 32 bytes. This command prints 64 hex characters, which encode 32
+random bytes:
+
+```bash
+openssl rand -hex 32
+```
+
 `make docker-up` starts PostgreSQL 17 and waits until it accepts
 connections. See [database.md](database.md) for details.
 

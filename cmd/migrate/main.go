@@ -58,12 +58,12 @@ func create(parameters []string) error {
 }
 
 func migrate(command string, parameters []string) error {
-	cfg, err := config.Load()
+	settings, err := config.LoadDatabase()
 	if err != nil {
 		return err
 	}
 
-	migrator, err := database.NewMigrator(context.Background(), cfg.Database)
+	migrator, err := database.NewMigrator(context.Background(), settings)
 	if err != nil {
 		return err
 	}

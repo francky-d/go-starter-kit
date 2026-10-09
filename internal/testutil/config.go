@@ -24,6 +24,11 @@ func Config() config.Config {
 		},
 		Log:      config.Log{Level: slog.LevelError, Format: config.LogFormatJSON},
 		Database: DatabaseConfig(),
-		Auth:     config.Auth{BcryptCost: bcrypt.MinCost},
+		Auth: config.Auth{
+			BcryptCost:          bcrypt.MinCost,
+			JWTSecret:           "a-test-secret-that-is-at-least-32-bytes-long",
+			JWTIssuer:           "go-starter-kit",
+			AccessTokenLifetime: 15 * time.Minute,
+		},
 	}
 }
