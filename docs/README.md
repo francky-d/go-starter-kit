@@ -4,7 +4,6 @@ Ce dossier décrit l'état actuel du kit tel qu'il est implémenté dans ce
 dépôt. Quand le code et cette documentation divergent, le code fait foi et
 la documentation doit être corrigée dans le même changement.
 
-La documentation est écrite en français ; une traduction anglaise suivra.
 Les identifiants, les commandes, les messages de l'API et les exemples de
 code restent tels qu'ils sont dans le code.
 
