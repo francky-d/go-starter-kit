@@ -24,6 +24,7 @@ var knownVariables = []string{
 	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
 	"DB_AUTO_MIGRATE",
+	"BCRYPT_COST",
 }
 
 const databaseURL = "postgres://app:app@localhost:5432/app?sslmode=disable"
@@ -67,6 +68,7 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, cfg.Database.ConnectionMaxIdleTime)
 	assert.Equal(t, 200*time.Millisecond, cfg.Database.SlowQueryThreshold)
 	assert.False(t, cfg.Database.AutoMigrate)
+	assert.Equal(t, 12, cfg.Auth.BcryptCost)
 }
 
 func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
@@ -125,6 +127,8 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"body limit without size", "HTTP_BODY_LIMIT", "lots", "HTTP_BODY_LIMIT"},
 		{"origin without scheme", "CORS_ALLOWED_ORIGINS", "app.example.com", "CORS_ALLOWED_ORIGINS"},
 		{"origin with a path", "CORS_ALLOWED_ORIGINS", "https://app.example.com/login", "CORS_ALLOWED_ORIGINS"},
+		{"bcrypt cost too low", "BCRYPT_COST", "3", "BCRYPT_COST"},
+		{"bcrypt cost too high", "BCRYPT_COST", "17", "BCRYPT_COST"},
 	}
 
 	for _, tc := range cases {

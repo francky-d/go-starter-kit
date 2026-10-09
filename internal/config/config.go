@@ -30,6 +30,7 @@ type Config struct {
 	CORS     CORS `envPrefix:"CORS_"`
 	Log      Log  `envPrefix:"LOG_"`
 	Database Database
+	Auth     Auth
 }
 
 type App struct {
@@ -71,6 +72,10 @@ type Database struct {
 	AutoMigrate           bool          `env:"DB_AUTO_MIGRATE" envDefault:"false"`
 }
 
+type Auth struct {
+	BcryptCost int `env:"BCRYPT_COST" envDefault:"12"`
+}
+
 // Load reads the optional .env file, then the environment. A variable
 // already set in the environment always wins over the .env file.
 func Load() (Config, error) {
@@ -105,6 +110,7 @@ func (c Config) Validate() error {
 		c.CORS.validate(),
 		c.Log.validate(),
 		c.Database.validate(),
+		c.Auth.validate(),
 	)
 	if problems != nil {
 		return fmt.Errorf("config: invalid configuration: %w", problems)
@@ -152,4 +158,11 @@ func (d Database) validate() error {
 		mustBePositive("DB_CONNECTION_MAX_IDLE_TIME", d.ConnectionMaxIdleTime),
 		mustBePositive("DB_SLOW_QUERY_THRESHOLD", d.SlowQueryThreshold),
 	)
+}
+
+// validate caps BCRYPT_COST at 16: bcrypt accepts up to 31, but each step
+// doubles the time, and the hasher computes one hash at startup. Tests use
+// the minimum of 4 to stay fast.
+func (a Auth) validate() error {
+	return mustBeBetween("BCRYPT_COST", a.BcryptCost, 4, 16)
 }

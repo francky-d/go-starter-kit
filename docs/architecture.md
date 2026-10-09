@@ -21,6 +21,7 @@ through the code, and where each responsibility lives.
 | `internal/http/respond` | Success envelopes and the central error handler. |
 | `internal/models` | GORM models. Every model embeds `Base`: UUID v7 id and timestamps. |
 | `internal/repositories` | Queries, one repository per model; database errors become `ErrNotFound`, `ErrDuplicate` or `ErrInvalid`. |
+| `internal/auth` | Authentication primitives: password hashing. Knows nothing about HTTP or the database. |
 | `internal/apperror` | Errors that carry an HTTP status and a client-safe message. |
 | `internal/testutil` | Test helpers: test configuration, migrated test database emptied around each test. |
 

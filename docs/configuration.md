@@ -98,6 +98,12 @@ clients authenticate with a bearer token.
 
 Use `sslmode=require` (or stricter) in production.
 
+### Authentication
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BCRYPT_COST` | `12` | bcrypt work factor for password hashes, from 4 to 16. Each step doubles the time to hash and to verify a password; keep at least 12 in production. |
+
 ### Logging
 
 | Variable | Default | Description |

@@ -59,7 +59,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 16 | Password hashing | `feat(auth): add password hashing` | todo |
+| 16 | Password hashing | `feat(auth): add password hashing` | done |
 | 17 | JWT access token issuer and parser | `feat(auth): add JWT access token issuer and parser` | todo |
 | 18 | Refresh token model, migration and repository | `feat(auth): add refresh token model, migration and repository` | todo |
 | 19 | Authentication service with refresh token rotation | `feat(auth): add authentication service with refresh token rotation` | todo |

@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/francky-d/go-starter-kit/internal/config"
 )
 
@@ -22,5 +24,6 @@ func Config() config.Config {
 		},
 		Log:      config.Log{Level: slog.LevelError, Format: config.LogFormatJSON},
 		Database: DatabaseConfig(),
+		Auth:     config.Auth{BcryptCost: bcrypt.MinCost},
 	}
 }
