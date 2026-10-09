@@ -158,10 +158,6 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (a App) IsProduction() bool {
-	return a.Environment == EnvironmentProduction
-}
-
 func (a App) validate() error {
 	return mustBeOneOf("APP_ENV", a.Environment, EnvironmentDevelopment, EnvironmentTest, EnvironmentProduction)
 }

@@ -92,3 +92,4 @@ task ships as exactly one atomic commit.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 28 | Readability conventions: single-purpose functions, comments only when necessary | `refactor: apply readability conventions to existing code` | done |
+| 29 | Remove the unused `App.IsProduction` helper | `refactor(config): remove unused IsProduction helper` | done |

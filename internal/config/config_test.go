@@ -119,7 +119,7 @@ func TestFromEnvironment_ReadsVariables(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "billing-api", cfg.App.Name)
-	assert.True(t, cfg.App.IsProduction())
+	assert.Equal(t, config.EnvironmentProduction, cfg.App.Environment)
 	assert.Equal(t, 9000, cfg.HTTP.Port)
 	assert.Equal(t, 45*time.Second, cfg.HTTP.WriteTimeout)
 	assert.Equal(t, slog.LevelDebug, cfg.Log.Level)
