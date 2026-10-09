@@ -132,6 +132,7 @@ docs/                  documentation
 | [Tests](docs/testing.md) | Lancer et écrire les tests, couverture, CI. |
 | [Conventions](docs/conventions.md) | Organisation et écriture du code. |
 | [Déploiement](docs/deployment.md) | Image Docker, migrations en production, check-list. |
+| [Guide : to-do list partagée](docs/guides/todo-list.md) | Une fonctionnalité complète construite sur le kit, avec des rôles et des tests. |
 
 ## Travailler avec des agents IA
 

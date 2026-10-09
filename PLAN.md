@@ -112,6 +112,8 @@ any other task.
 | 32 | Purge expired refresh tokens, with its caller: a migrate-style command or a documented scheduled job | `feat(auth): purge expired refresh tokens` | todo |
 | 33 | Choose a license and add the `LICENSE` file | `chore: add license` | todo |
 | 37 | Test that repositories turn a check constraint violation into `ErrInvalid`: no test asserts the sentinel today | `test(repositories): cover the ErrInvalid translation` | todo |
+| 39 | Scaffold skill: replace `Save` for updates (it inserts the record again when a concurrent delete made the update match nothing) with `Select(...).Updates` and an affected-rows check | `docs(scaffold): update records without Save` | todo |
+| 40 | Test client: add `Put`, `Patch`, `Delete` and `Meta`, which the scaffold skill's endpoint tests need | `test: add PUT, PATCH, DELETE and meta to the test client` | todo |
 
 ## Documentation in French and guides
 
@@ -122,5 +124,5 @@ English translation will follow.
 | --- | --- | --- | --- |
 | 34 | Write the documentation in French and update the language rule | `docs: translate the documentation to French` | done |
 | 35 | Document what switching to another database involves | `docs(database): document switching to another database` | done |
-| 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | todo |
+| 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | done |
 | 38 | Validation messages say "1 character", not "1 characters" (found while building the guide) | `fix(http): use the singular for a validation limit of one` | done |

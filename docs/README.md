@@ -22,3 +22,12 @@ code restent tels qu'ils sont dans le code.
 | [testing.md](testing.md) | Lancer et écrire les tests, couverture, tests de bout en bout et CI. |
 | [conventions.md](conventions.md) | Organisation, nommage et tests du code. |
 | [deployment.md](deployment.md) | L'image Docker, la pile en conteneurs et une check-list de mise en production. |
+
+## Guides
+
+Les guides construisent une fonctionnalité sur le kit. Leur code ne fait
+pas partie du kit, mais il a été vérifié : lint et tests passent.
+
+| Guide | Objet |
+| --- | --- |
+| [guides/todo-list.md](guides/todo-list.md) | Une to-do list partagée avec des rôles : migrations, modèles, contrôle d'accès, endpoints et tests. |
