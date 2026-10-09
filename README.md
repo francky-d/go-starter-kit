@@ -128,6 +128,7 @@ docs/                  documentation
 | [Authentification](docs/authentication.md) | Mots de passe, jetons, sessions, limitation de débit. |
 | [Configuration](docs/configuration.md) | Chaque variable d'environnement. |
 | [Base de données](docs/database.md) | PostgreSQL en local, migrations, schéma. |
+| [Changer de base de données](docs/switching-database.md) | Ce qui dépend de PostgreSQL, les pièges, les étapes. |
 | [Tests](docs/testing.md) | Lancer et écrire les tests, couverture, CI. |
 | [Conventions](docs/conventions.md) | Organisation et écriture du code. |
 | [Déploiement](docs/deployment.md) | Image Docker, migrations en production, check-list. |

@@ -1,7 +1,8 @@
 # Base de données
 
 L'API stocke ses données dans PostgreSQL 17 et y accède via
-[GORM](https://gorm.io) avec le driver `pgx`.
+[GORM](https://gorm.io) avec le driver `pgx`. Pour passer à une autre
+base, voir [switching-database.md](switching-database.md).
 
 ## Base locale
 
@@ -134,13 +135,20 @@ un UUID v7 attribué juste avant l'insertion.
 
 Les requêtes vivent dans `internal/repositories`, un repository par
 modèle. Un repository traduit les erreurs de la base en ses propres
-sentinelles, si bien que les services ne dépendent jamais de GORM :
+sentinelles, si bien que les services ne voient jamais une erreur de GORM
+ou de la base :
 
 | Sentinelle | Levée quand |
 | --- | --- |
 | `repositories.ErrNotFound` | Aucun enregistrement ne correspond. |
 | `repositories.ErrDuplicate` | Un index unique rejette la valeur, comme un email déjà pris. |
 | `repositories.ErrInvalid` | Une contrainte de vérification rejette la valeur. |
+
+Les services dépendent en revanche de GORM pour les transactions :
+`AuthService` ouvre une transaction sur le `*gorm.DB` et la passe aux
+repositories par leur méthode `WithTx`. Voir
+[switching-database.md](switching-database.md) pour ce que cela implique
+au moment de changer de base.
 
 Le repository des utilisateurs normalise les emails (sans espaces autour,
 en minuscules) quand il crée un utilisateur et quand il en cherche un par

@@ -111,6 +111,7 @@ any other task.
 | 31 | Run `govulncheck` in CI, at a pinned version (after row 30, or CI fails) | `ci: run govulncheck` | todo |
 | 32 | Purge expired refresh tokens, with its caller: a migrate-style command or a documented scheduled job | `feat(auth): purge expired refresh tokens` | todo |
 | 33 | Choose a license and add the `LICENSE` file | `chore: add license` | todo |
+| 37 | Test that repositories turn a check constraint violation into `ErrInvalid`: no test asserts the sentinel today | `test(repositories): cover the ErrInvalid translation` | todo |
 
 ## Documentation in French and guides
 
@@ -120,5 +121,5 @@ English translation will follow.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 34 | Write the documentation in French and update the language rule | `docs: translate the documentation to French` | done |
-| 35 | Document what switching to another database involves | `docs(database): document switching to another database` | todo |
+| 35 | Document what switching to another database involves | `docs(database): document switching to another database` | done |
 | 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | todo |

@@ -18,6 +18,7 @@ code restent tels qu'ils sont dans le code.
 | [configuration.md](configuration.md) | Chaque variable d'environnement, sa valeur par défaut et la résolution des valeurs. |
 | [authentication.md](authentication.md) | Mots de passe, jetons d'accès et de rafraîchissement, sessions, requêtes authentifiées et limitation de débit. |
 | [database.md](database.md) | PostgreSQL en local, migrations, schéma, pool de connexions et logs des requêtes. |
+| [switching-database.md](switching-database.md) | Ce qui dépend de PostgreSQL et ce qu'il faut changer pour passer à une autre base. |
 | [testing.md](testing.md) | Lancer et écrire les tests, couverture, tests de bout en bout et CI. |
 | [conventions.md](conventions.md) | Organisation, nommage et tests du code. |
 | [deployment.md](deployment.md) | L'image Docker, la pile en conteneurs et une check-list de mise en production. |

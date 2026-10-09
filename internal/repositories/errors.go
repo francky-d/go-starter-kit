@@ -1,5 +1,7 @@
 // Package repositories holds the database queries. Repositories translate
-// GORM errors into the sentinels below, so services never depend on GORM.
+// GORM errors into the sentinels below, so services never depend on GORM
+// error values. Services still use GORM to open transactions, which they
+// hand to repositories through WithTx.
 package repositories
 
 import (
