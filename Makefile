@@ -18,17 +18,21 @@ build: ## Compile the API and the migrate command into bin/
 docker-up: ## Start PostgreSQL and wait until it is ready
 	docker compose up -d --wait
 
+.PHONY: docker-full
+docker-full: ## Build the API image and start it with PostgreSQL (needs JWT_SECRET)
+	docker compose --profile full up -d --build --wait
+
 .PHONY: docker-down
-docker-down: ## Stop PostgreSQL, keeping its data
-	docker compose down
+docker-down: ## Stop the containers, keeping the database data
+	docker compose --profile full down
 
 .PHONY: docker-reset
-docker-reset: ## Stop PostgreSQL and delete its data
-	docker compose down --volumes
+docker-reset: ## Stop the containers and delete the database data
+	docker compose --profile full down --volumes
 
 .PHONY: docker-logs
-docker-logs: ## Follow the PostgreSQL logs
-	docker compose logs --follow postgres
+docker-logs: ## Follow the logs of the running containers
+	docker compose --profile full logs --follow
 
 .PHONY: migrate-up
 migrate-up: ## Apply every pending migration

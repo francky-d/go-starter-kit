@@ -1,0 +1,12 @@
+# Only what the build needs goes into the build context.
+.git
+.github
+.claude
+.env*
+bin
+tmp
+docs
+review
+coverage.out
+coverage.html
+*.md

@@ -9,8 +9,8 @@ The API stores its data in PostgreSQL 17 and reaches it through
 
 ```bash
 make docker-up      # start and wait until ready
-make docker-down    # stop, keep the data
-make docker-reset   # stop and delete the data
+make docker-down    # stop the containers, keep the data
+make docker-reset   # stop the containers and delete the data
 ```
 
 | Setting | Value |

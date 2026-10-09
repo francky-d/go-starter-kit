@@ -16,3 +16,4 @@ the source of truth and the documentation must be fixed in the same change.
 | [database.md](database.md) | Local PostgreSQL, connection pool and query logging. |
 | [testing.md](testing.md) | Running the tests, the test database and the test helpers. |
 | [conventions.md](conventions.md) | How the code is organised, named and tested. |
+| [deployment.md](deployment.md) | The Docker image, the stack in containers, and a production checklist. |

@@ -73,9 +73,10 @@ Run `make` to list every command.
 | `make run` | Run the API. |
 | `make build` | Compile the API and the migrate command into `bin/`. |
 | `make docker-up` | Start PostgreSQL and wait until it is ready. |
-| `make docker-down` | Stop PostgreSQL, keeping its data. |
-| `make docker-reset` | Stop PostgreSQL and delete its data. |
-| `make docker-logs` | Follow the PostgreSQL logs. |
+| `make docker-full` | Build the API image and start it with PostgreSQL. Needs `JWT_SECRET`. |
+| `make docker-down` | Stop the containers, keeping the database data. |
+| `make docker-reset` | Stop the containers and delete the database data. |
+| `make docker-logs` | Follow the logs of the running containers. |
 | `make migrate-up` | Apply every pending migration. |
 | `make migrate-down` | Roll back the last migration. |
 | `make migrate-version` | Print the current migration version. |

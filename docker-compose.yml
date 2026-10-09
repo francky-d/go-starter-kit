@@ -23,5 +23,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # The API in a container, built from the Dockerfile: make docker-full.
+  # The default `make docker-up` starts PostgreSQL only.
+  api:
+    build: .
+    profiles: [full]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
+      DB_AUTO_MIGRATE: "true"
+      # From .env or the shell. Empty, the API refuses to start and says why.
+      JWT_SECRET: ${JWT_SECRET:-}
+    ports:
+      - "127.0.0.1:${API_FORWARD_PORT:-8080}:8080"
+
 volumes:
   postgres-data:
