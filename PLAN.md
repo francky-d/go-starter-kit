@@ -123,3 +123,4 @@ English translation will follow.
 | 34 | Write the documentation in French and update the language rule | `docs: translate the documentation to French` | done |
 | 35 | Document what switching to another database involves | `docs(database): document switching to another database` | done |
 | 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | todo |
+| 38 | Validation messages say "1 character", not "1 characters" (found while building the guide) | `fix(http): use the singular for a validation limit of one` | done |

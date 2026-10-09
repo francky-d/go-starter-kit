@@ -91,6 +91,8 @@ Un champ peut avoir plusieurs messages.
 | len | `must be exactly <n>`, avec les mêmes unités |
 | toute autre règle | `is invalid` |
 
+L'unité est au singulier quand la limite vaut 1 : `must be at least 1 character`.
+
 Les messages ne répètent jamais la valeur envoyée. Les champs que
 l'endpoint n'attend pas sont ignorés.
 

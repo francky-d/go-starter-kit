@@ -27,6 +27,8 @@ type signUp struct {
 	Address  *address  `json:"address" validate:"omitempty"`
 	Tags     []string  `json:"tags" validate:"max=2"`
 	Items    []address `json:"items" validate:"dive"`
+	Nickname *string   `json:"nickname" validate:"omitnil,min=1"`
+	Labels   []string  `json:"labels" validate:"max=1"`
 }
 
 // post sends body through a real Echo instance, so binding, validation and
@@ -107,6 +109,25 @@ func TestBind_DescribesEachRuleWithoutEchoingTheValue(t *testing.T) {
 		}
 	}`, response.Body.String())
 	assert.NotContains(t, response.Body.String(), "not-an-email")
+}
+
+func TestBind_UsesTheSingularForALimitOfOne(t *testing.T) {
+	response, _ := postJSON(t, `{
+		"name": "Ada",
+		"email": "ada@example.com",
+		"password": "long-enough",
+		"nickname": "",
+		"labels": ["a", "b"]
+	}`)
+
+	require.Equal(t, http.StatusUnprocessableEntity, response.Code)
+	assert.JSONEq(t, `{
+		"message": "The given data was invalid.",
+		"errors": {
+			"nickname": ["must be at least 1 character"],
+			"labels": ["must be at most 1 item"]
+		}
+	}`, response.Body.String())
 }
 
 func TestBind_NamesNestedFieldsByTheirPath(t *testing.T) {

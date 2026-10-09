@@ -57,10 +57,18 @@ func message(invalid validator.FieldError) string {
 func sized(invalid validator.FieldError) string {
 	switch invalid.Kind() {
 	case reflect.String:
-		return fmt.Sprintf("%s characters", invalid.Param())
+		return counted(invalid.Param(), "character")
 	case reflect.Slice, reflect.Array, reflect.Map:
-		return fmt.Sprintf("%s items", invalid.Param())
+		return counted(invalid.Param(), "item")
 	default:
 		return invalid.Param()
 	}
+}
+
+func counted(count, unit string) string {
+	if count == "1" {
+		return fmt.Sprintf("%s %s", count, unit)
+	}
+
+	return fmt.Sprintf("%s %ss", count, unit)
 }
