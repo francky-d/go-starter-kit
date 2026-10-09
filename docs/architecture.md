@@ -15,6 +15,7 @@ through the code, and where each responsibility lives.
 | `internal/app` | Wires every dependency with explicit constructors and runs the HTTP server. |
 | `internal/database` | Opens the PostgreSQL connection pool used through GORM, and runs the embedded migrations. |
 | `internal/routes` | Declares every route in one place. |
+| `internal/http/middleware` | Middleware: the baseline stack every request goes through, and the client IP policy. |
 | `internal/http/router` | Fluent wrapper over Echo routing: groups, middleware and routes declared as a chain. |
 | `internal/http/controllers` | HTTP handlers. A controller returns a response or an error, never an error body. |
 | `internal/http/respond` | Success envelopes and the central error handler. |
@@ -74,12 +75,28 @@ api.Middleware(authenticated).Get("/me", users.Me)
 
 ## Request lifecycle
 
+Every request first goes through the baseline middleware, in this order:
+
+| Middleware | Effect |
+| --- | --- |
+| Request ID | Keeps a plain client `X-Request-Id` or generates one. |
+| Request logger | One log record per request: method, path without query string, route, status, latency, client IP, request ID. Successful `/health` probes are logged at debug level. |
+| Recover | Turns a panic into a generic `500` and logs the stack trace. |
+| Secure headers | `nosniff`, `DENY` framing, a deny-all CSP, `no-referrer`. |
+| CORS | Only when `CORS_ALLOWED_ORIGINS` is set. |
+| Body limit | Rejects bodies over `HTTP_BODY_LIMIT` with `413`. |
+| Request timeout | Gives the request context a deadline of `HTTP_REQUEST_TIMEOUT`; a request whose work is cancelled by the deadline answers `503`. |
+
+The client IP comes from the TCP peer, or from `X-Forwarded-For` when
+`HTTP_TRUST_PROXY` is set (see [configuration](configuration.md#behind-a-reverse-proxy)).
+
 ```text
 HTTP request
- └─ Echo router ─ no route? ───────────────────────┐
-     └─ controller                                 │
-         ├─ success ─ respond.OK / Created / ...   │
-         └─ return err ────────────────────────────┤
+ └─ baseline middleware
+     └─ Echo router ─ no route? ───────────────────┐
+         └─ controller                             │
+             ├─ success ─ respond.OK / Created     │
+             └─ return err ────────────────────────┤
                                                    ▼
                                    respond.ErrorHandler
                                     ├─ *apperror.Error  → its status, message, field errors

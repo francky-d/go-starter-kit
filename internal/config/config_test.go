@@ -18,6 +18,8 @@ var knownVariables = []string{
 	"APP_NAME", "APP_ENV",
 	"HTTP_PORT", "HTTP_READ_HEADER_TIMEOUT", "HTTP_READ_TIMEOUT",
 	"HTTP_WRITE_TIMEOUT", "HTTP_IDLE_TIMEOUT", "HTTP_SHUTDOWN_TIMEOUT",
+	"HTTP_REQUEST_TIMEOUT", "HTTP_BODY_LIMIT", "HTTP_TRUST_PROXY",
+	"CORS_ALLOWED_ORIGINS",
 	"LOG_LEVEL", "LOG_FORMAT",
 	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
@@ -51,6 +53,10 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, 30*time.Second, cfg.HTTP.WriteTimeout)
 	assert.Equal(t, 60*time.Second, cfg.HTTP.IdleTimeout)
 	assert.Equal(t, 10*time.Second, cfg.HTTP.ShutdownTimeout)
+	assert.Equal(t, 15*time.Second, cfg.HTTP.RequestTimeout)
+	assert.Equal(t, "1M", cfg.HTTP.BodyLimit)
+	assert.False(t, cfg.HTTP.TrustProxy)
+	assert.Empty(t, cfg.CORS.AllowedOrigins)
 	assert.Equal(t, slog.LevelInfo, cfg.Log.Level)
 	assert.Equal(t, config.LogFormatJSON, cfg.Log.Format)
 	assert.Equal(t, databaseURL, cfg.Database.URL)
@@ -82,6 +88,8 @@ func TestFromEnvironment_ReadsVariables(t *testing.T) {
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("LOG_FORMAT", "text")
 	t.Setenv("DB_AUTO_MIGRATE", "true")
+	t.Setenv("HTTP_TRUST_PROXY", "true")
+	t.Setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com, http://localhost:3000")
 
 	cfg, err := config.FromEnvironment()
 
@@ -93,6 +101,8 @@ func TestFromEnvironment_ReadsVariables(t *testing.T) {
 	assert.Equal(t, slog.LevelDebug, cfg.Log.Level)
 	assert.Equal(t, config.LogFormatText, cfg.Log.Format)
 	assert.True(t, cfg.Database.AutoMigrate)
+	assert.True(t, cfg.HTTP.TrustProxy)
+	assert.Equal(t, []string{"https://app.example.com", "http://localhost:3000"}, cfg.CORS.AllowedOrigins)
 }
 
 func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
@@ -111,6 +121,10 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"no open connections", "DB_MAX_OPEN_CONNECTIONS", "0", "DB_MAX_OPEN_CONNECTIONS"},
 		{"more idle than open connections", "DB_MAX_IDLE_CONNECTIONS", "26", "DB_MAX_IDLE_CONNECTIONS"},
 		{"zero connect timeout", "DB_CONNECT_TIMEOUT", "0s", "DB_CONNECT_TIMEOUT"},
+		{"request timeout not below write timeout", "HTTP_REQUEST_TIMEOUT", "30s", "HTTP_WRITE_TIMEOUT"},
+		{"body limit without size", "HTTP_BODY_LIMIT", "lots", "HTTP_BODY_LIMIT"},
+		{"origin without scheme", "CORS_ALLOWED_ORIGINS", "app.example.com", "CORS_ALLOWED_ORIGINS"},
+		{"origin with a path", "CORS_ALLOWED_ORIGINS", "https://app.example.com/login", "CORS_ALLOWED_ORIGINS"},
 	}
 
 	for _, tc := range cases {

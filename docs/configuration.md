@@ -54,8 +54,34 @@ Durations use Go syntax: `500ms`, `10s`, `5m`, `1h30m`.
 | `HTTP_WRITE_TIMEOUT` | `30s` | Maximum time to write the response. |
 | `HTTP_IDLE_TIMEOUT` | `60s` | Maximum time a keep-alive connection waits for the next request. |
 | `HTTP_SHUTDOWN_TIMEOUT` | `10s` | Maximum time to finish in-flight requests on shutdown. |
+| `HTTP_REQUEST_TIMEOUT` | `15s` | Deadline of each request's context; a request whose work is cancelled by the deadline answers `503`. Must be below `HTTP_WRITE_TIMEOUT`. |
+| `HTTP_BODY_LIMIT` | `1M` | Largest accepted request body, such as `512K` or `2M`. Larger bodies answer `413`. |
+| `HTTP_TRUST_PROXY` | `false` | Read the client IP from `X-Forwarded-For`. See below. |
 
 All timeouts must be positive.
+
+#### Behind a reverse proxy
+
+By default the client IP is the address of the TCP peer. Behind a load
+balancer or reverse proxy, that is the proxy's address: set
+`HTTP_TRUST_PROXY=true` so the IP is read from `X-Forwarded-For`. The header
+is then honoured only when the peer is on a loopback or private network.
+Never enable it when clients reach the API directly: they could choose the
+IP that the logs and the rate limits see.
+
+The API sends no `Strict-Transport-Security` header: it expects TLS to be
+terminated by the proxy, which should send it. If the API terminates TLS
+itself, add an `HSTSMaxAge` to the secure headers middleware.
+
+### CORS
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `CORS_ALLOWED_ORIGINS` | *(empty)* | Comma-separated browser origins allowed to call the API, such as `https://app.example.com, http://localhost:3000`. Each entry is `scheme://host[:port]` or `*`. |
+
+With no origin configured, the API sends no CORS headers and browsers on
+other origins cannot call it. Credentials (cookies) are never allowed:
+clients authenticate with a bearer token.
 
 ### Database
 

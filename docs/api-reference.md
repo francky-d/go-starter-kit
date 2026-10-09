@@ -24,6 +24,21 @@ Collections that are paginated add a `meta` object:
 
 `204 No Content` responses have no body.
 
+## Headers
+
+Every response carries:
+
+| Header | Value |
+| --- | --- |
+| `X-Request-Id` | Identifier of the request, also written in every log record about it. A client-provided value is kept when it has 1 to 64 letters, digits, `.`, `_` or `-`; otherwise a new one is generated. |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
+| `Referrer-Policy` | `no-referrer` |
+
+Send request bodies as JSON with `Content-Type: application/json`. Bodies
+larger than `HTTP_BODY_LIMIT` are rejected.
+
 ## Errors
 
 Every error response has the same shape. `errors` is present only for
@@ -47,11 +62,12 @@ validation failures and maps each invalid field to its messages:
 | 403 | `This action is forbidden.` | The caller is authenticated but not allowed. |
 | 404 | `Resource not found.` | The route or the record does not exist, or the record belongs to someone else. |
 | 409 | depends on the error | The request conflicts with the current state. |
+| 413 | `Request Entity Too Large.` | The body is larger than `HTTP_BODY_LIMIT`. |
 | 415 | `Unsupported Media Type.` | The body is not sent as `application/json`. |
 | 422 | `The given data was invalid.` | Validation failed; see `errors`. |
 | 429 | `Too many requests.` | A rate limit was hit. |
 | 500 | `Internal server error.` | An unexpected error occurred. |
-| 503 | `Service unavailable.` | A dependency is down. |
+| 503 | `Service unavailable.` | A dependency is down, or the request ran longer than `HTTP_REQUEST_TIMEOUT`. |
 
 Other statuses produced by the HTTP layer (for example `405`) use the
 standard reason phrase as message, such as `Method Not Allowed.`.

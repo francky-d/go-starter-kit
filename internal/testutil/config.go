@@ -17,6 +17,8 @@ func Config() config.Config {
 			WriteTimeout:      time.Second,
 			IdleTimeout:       time.Second,
 			ShutdownTimeout:   time.Second,
+			RequestTimeout:    500 * time.Millisecond,
+			BodyLimit:         "1M",
 		},
 		Log:      config.Log{Level: slog.LevelError, Format: config.LogFormatJSON},
 		Database: DatabaseConfig(),

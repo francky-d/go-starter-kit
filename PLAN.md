@@ -47,7 +47,7 @@ task ships as exactly one atomic commit.
 | --- | --- | --- | --- |
 | 12 | Request binding with validation errors | `feat(http): add request binding with validation errors` | done |
 | 13 | Fluent router wrapper | `feat(http): add fluent router wrapper` | done |
-| 14 | Baseline middleware stack | `feat(http): add baseline middleware stack` | todo |
+| 14 | Baseline middleware stack | `feat(http): add baseline middleware stack` | done |
 
 ## Phase 5 - Users
 

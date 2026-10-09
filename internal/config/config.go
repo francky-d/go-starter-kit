@@ -27,6 +27,7 @@ const (
 type Config struct {
 	App      App  `envPrefix:"APP_"`
 	HTTP     HTTP `envPrefix:"HTTP_"`
+	CORS     CORS `envPrefix:"CORS_"`
 	Log      Log  `envPrefix:"LOG_"`
 	Database Database
 }
@@ -43,6 +44,15 @@ type HTTP struct {
 	WriteTimeout      time.Duration `env:"WRITE_TIMEOUT" envDefault:"30s"`
 	IdleTimeout       time.Duration `env:"IDLE_TIMEOUT" envDefault:"60s"`
 	ShutdownTimeout   time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"10s"`
+	RequestTimeout    time.Duration `env:"REQUEST_TIMEOUT" envDefault:"15s"`
+	BodyLimit         string        `env:"BODY_LIMIT" envDefault:"1M"`
+	// TrustProxy reads the client IP from X-Forwarded-For. Enable it only
+	// behind a proxy that sets the header, or clients can forge their IP.
+	TrustProxy bool `env:"TRUST_PROXY" envDefault:"false"`
+}
+
+type CORS struct {
+	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envSeparator:","`
 }
 
 type Log struct {
@@ -77,6 +87,8 @@ func FromEnvironment() (Config, error) {
 		return Config{}, fmt.Errorf("config: %w", err)
 	}
 
+	cfg.CORS.AllowedOrigins = trimEach(cfg.CORS.AllowedOrigins)
+
 	if err := cfg.Validate(); err != nil {
 		return Config{}, err
 	}
@@ -90,6 +102,7 @@ func (c Config) Validate() error {
 	problems := errors.Join(
 		c.App.validate(),
 		c.HTTP.validate(),
+		c.CORS.validate(),
 		c.Log.validate(),
 		c.Database.validate(),
 	)
@@ -116,7 +129,14 @@ func (h HTTP) validate() error {
 		mustBePositive("HTTP_WRITE_TIMEOUT", h.WriteTimeout),
 		mustBePositive("HTTP_IDLE_TIMEOUT", h.IdleTimeout),
 		mustBePositive("HTTP_SHUTDOWN_TIMEOUT", h.ShutdownTimeout),
+		mustBePositive("HTTP_REQUEST_TIMEOUT", h.RequestTimeout),
+		mustExceed("HTTP_WRITE_TIMEOUT", h.WriteTimeout, "HTTP_REQUEST_TIMEOUT", h.RequestTimeout),
+		mustBeByteSize("HTTP_BODY_LIMIT", h.BodyLimit),
 	)
+}
+
+func (c CORS) validate() error {
+	return mustBeOrigins("CORS_ALLOWED_ORIGINS", c.AllowedOrigins)
 }
 
 func (l Log) validate() error {

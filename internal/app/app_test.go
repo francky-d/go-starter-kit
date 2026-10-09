@@ -71,6 +71,13 @@ func TestNew_FailsWhenTheDatabaseIsUnreachable(t *testing.T) {
 	assert.ErrorContains(t, err, "database: connect")
 }
 
+func TestApp_RunsEveryRequestThroughTheBaselineMiddleware(t *testing.T) {
+	response := get(t, newApp(t), http.MethodGet, "/health")
+
+	assert.NotEmpty(t, response.Header().Get("X-Request-Id"))
+	assert.Equal(t, "nosniff", response.Header().Get("X-Content-Type-Options"))
+}
+
 func TestUnknownRoute_AnswersTheErrorEnvelope(t *testing.T) {
 	response := get(t, newApp(t), http.MethodGet, "/does-not-exist")
 

@@ -15,6 +15,7 @@ import (
 	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/database"
 	"github.com/francky-d/go-starter-kit/internal/http/controllers"
+	"github.com/francky-d/go-starter-kit/internal/http/middleware"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
 	"github.com/francky-d/go-starter-kit/internal/http/router"
 	"github.com/francky-d/go-starter-kit/internal/routes"
@@ -33,7 +34,7 @@ func New(ctx context.Context, cfg config.Config, log *slog.Logger) (*App, error)
 		return nil, err
 	}
 
-	application := &App{config: cfg, log: log, database: db, echo: newEcho(log)}
+	application := &App{config: cfg, log: log, database: db, echo: newEcho(cfg, log)}
 	if err := application.registerRoutes(); err != nil {
 		return nil, errors.Join(err, application.Close())
 	}
@@ -75,11 +76,13 @@ func (a *App) registerRoutes() error {
 	return nil
 }
 
-func newEcho(log *slog.Logger) *echo.Echo {
+func newEcho(cfg config.Config, log *slog.Logger) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
 	e.HTTPErrorHandler = respond.ErrorHandler(log)
+	e.IPExtractor = middleware.ClientIP(cfg.HTTP.TrustProxy)
+	e.Use(middleware.Baseline(cfg, log)...)
 
 	return e
 }
