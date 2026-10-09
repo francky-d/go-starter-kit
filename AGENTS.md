@@ -81,6 +81,7 @@ Run `make` to list every command.
 | `make migrate-version` | Print the current migration version. |
 | `make migrate-create name=...` | Create an empty up/down migration pair. |
 | `make test` | Run the test suite. Needs `make docker-up` first. |
+| `make test-cover` | Run the test suite with coverage; writes `coverage.out` and `coverage.html`. |
 | `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file. |
 | `make tidy` | Sync `go.mod` and `go.sum` with the imports. |

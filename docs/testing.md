@@ -9,6 +9,7 @@ against a real PostgreSQL database: the database is never mocked.
 ```bash
 make docker-up     # once: start PostgreSQL
 make test          # the whole suite
+make test-cover    # the whole suite, with coverage
 go test ./internal/repositories/...   # one package while iterating
 ```
 
@@ -18,6 +19,30 @@ in order.
 
 Tests connect to `app_test` on `localhost:5432`. Set `TEST_DATABASE_URL` to
 use another database (see [database.md](database.md#test-database)).
+
+## Coverage
+
+`make test-cover` runs the suite with coverage of every package under
+`internal/`, including code reached from another package's tests: the
+end-to-end tests count for the controllers and services they go through.
+It prints the total and writes two files, both ignored by git:
+
+| File | Content |
+| --- | --- |
+| `coverage.out` | The raw profile, for `go tool cover`. |
+| `coverage.html` | A page that colours every line by coverage. |
+
+Read the `total:` line and the HTML page. While the tests run, a package
+without test files prints `coverage: 0.0% of statements` even when other
+packages' tests cover it; the profile counts that coverage.
+
+## End-to-end tests
+
+`internal/app/auth_flow_test.go` drives the API the way a client
+application does: register, read the current user, refresh, log out,
+log in again, then present an exchanged refresh token and check that
+every session is revoked. It covers how the endpoints work together,
+which the tests of each endpoint do not.
 
 ## Helpers
 

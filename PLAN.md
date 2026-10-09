@@ -70,7 +70,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 22 | End-to-end authentication flow and coverage target | `test: add end-to-end authentication flow and coverage target` | todo |
+| 22 | End-to-end authentication flow and coverage target | `test: add end-to-end authentication flow and coverage target` | done |
 
 ## Phase 8 - Tooling
 

@@ -70,6 +70,7 @@ Run `make` to list every command.
 | `make migrate-version` | Print the current migration version. |
 | `make migrate-create name=...` | Create an empty up/down migration pair. |
 | `make test` | Run the test suite. PostgreSQL must be running. |
+| `make test-cover` | Run the test suite with coverage and print the total. |
 | `make lint` | Check formatting and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file with `gofmt`. |
 | `make tidy` | Sync `go.mod` and `go.sum` with the imports. |

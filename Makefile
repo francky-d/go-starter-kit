@@ -51,6 +51,12 @@ migrate-create: ## Create a migration pair: make migrate-create name=create_post
 test: ## Run the test suite
 	go test -p 1 ./...
 
+.PHONY: test-cover
+test-cover: ## Run the test suite with coverage; writes coverage.out and coverage.html
+	go test -p 1 -coverprofile=coverage.out -coverpkg=./internal/... ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@go tool cover -func=coverage.out | tail -n 1
+
 .PHONY: lint
 lint: ## Check formatting and go.mod, then run go vet and staticcheck
 	@unformatted="$$(gofmt -l .)"; \
