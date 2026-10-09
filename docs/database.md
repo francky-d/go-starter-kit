@@ -98,6 +98,29 @@ go run ./cmd/migrate force 1     # the last version that is fully applied
 | `created_at` | `timestamptz` | Defaults to `now()`. |
 | `updated_at` | `timestamptz` | Defaults to `now()`. |
 
+## Models and repositories
+
+GORM models live in `internal/models`. Every model embeds `models.Base`,
+which holds the `id` and the timestamps; the id is a UUID v7 assigned just
+before the insert.
+
+Queries live in `internal/repositories`, one repository per model. A
+repository translates database errors into its own sentinels, so services
+never depend on GORM:
+
+| Sentinel | Raised when |
+| --- | --- |
+| `repositories.ErrNotFound` | No record matches. |
+| `repositories.ErrDuplicate` | A unique index rejects the value, such as a taken email. |
+| `repositories.ErrInvalid` | A check constraint rejects the value. |
+
+The user repository normalises emails (trimmed, lowercase) when it creates
+a user and when it looks one up by email, so the case of an email never
+matters.
+
+Lists are paginated with the `repositories.Paginate(page, perPage)` scope.
+The page size defaults to 20 and is capped at 100.
+
 ## Connection
 
 At startup the API opens a connection pool and pings the database. If the

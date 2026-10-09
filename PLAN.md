@@ -53,7 +53,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 15 | User model, repository and database test helpers | `feat(users): add user model, repository and database test helpers` | todo |
+| 15 | User model, repository and database test helpers | `feat(users): add user model, repository and database test helpers` | done |
 
 ## Phase 6 - Authentication
 

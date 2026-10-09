@@ -19,8 +19,10 @@ through the code, and where each responsibility lives.
 | `internal/http/router` | Fluent wrapper over Echo routing: groups, middleware and routes declared as a chain. |
 | `internal/http/controllers` | HTTP handlers. A controller returns a response or an error, never an error body. |
 | `internal/http/respond` | Success envelopes and the central error handler. |
+| `internal/models` | GORM models. Every model embeds `Base`: UUID v7 id and timestamps. |
+| `internal/repositories` | Queries, one repository per model; database errors become `ErrNotFound`, `ErrDuplicate` or `ErrInvalid`. |
 | `internal/apperror` | Errors that carry an HTTP status and a client-safe message. |
-| `internal/testutil` | Test helpers: test configuration and test database URL. |
+| `internal/testutil` | Test helpers: test configuration, migrated test database emptied around each test. |
 
 Dependencies point inwards: `cmd/api` depends on `internal/app`, which
 depends on everything else. Nothing depends on `internal/app`.
