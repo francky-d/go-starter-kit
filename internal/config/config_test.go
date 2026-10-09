@@ -21,6 +21,7 @@ var knownVariables = []string{
 	"LOG_LEVEL", "LOG_FORMAT",
 	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
+	"DB_AUTO_MIGRATE",
 }
 
 const databaseURL = "postgres://app:app@localhost:5432/app?sslmode=disable"
@@ -59,6 +60,7 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, 30*time.Minute, cfg.Database.ConnectionMaxLifetime)
 	assert.Equal(t, 5*time.Minute, cfg.Database.ConnectionMaxIdleTime)
 	assert.Equal(t, 200*time.Millisecond, cfg.Database.SlowQueryThreshold)
+	assert.False(t, cfg.Database.AutoMigrate)
 }
 
 func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
@@ -79,6 +81,7 @@ func TestFromEnvironment_ReadsVariables(t *testing.T) {
 	t.Setenv("HTTP_WRITE_TIMEOUT", "45s")
 	t.Setenv("LOG_LEVEL", "debug")
 	t.Setenv("LOG_FORMAT", "text")
+	t.Setenv("DB_AUTO_MIGRATE", "true")
 
 	cfg, err := config.FromEnvironment()
 
@@ -89,6 +92,7 @@ func TestFromEnvironment_ReadsVariables(t *testing.T) {
 	assert.Equal(t, 45*time.Second, cfg.HTTP.WriteTimeout)
 	assert.Equal(t, slog.LevelDebug, cfg.Log.Level)
 	assert.Equal(t, config.LogFormatText, cfg.Log.Format)
+	assert.True(t, cfg.Database.AutoMigrate)
 }
 
 func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {

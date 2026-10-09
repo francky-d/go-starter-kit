@@ -11,8 +11,8 @@ run: ## Run the API (reads .env when present)
 	go run ./cmd/api
 
 .PHONY: build
-build: ## Compile the API into bin/api
-	go build -trimpath -o bin/api ./cmd/api
+build: ## Compile the API and the migrate command into bin/
+	go build -trimpath -o bin/ ./cmd/...
 
 .PHONY: docker-up
 docker-up: ## Start PostgreSQL and wait until it is ready
@@ -30,9 +30,26 @@ docker-reset: ## Stop PostgreSQL and delete its data
 docker-logs: ## Follow the PostgreSQL logs
 	docker compose logs --follow postgres
 
+.PHONY: migrate-up
+migrate-up: ## Apply every pending migration
+	go run ./cmd/migrate up
+
+.PHONY: migrate-down
+migrate-down: ## Roll back the last migration
+	go run ./cmd/migrate down
+
+.PHONY: migrate-version
+migrate-version: ## Print the current migration version
+	go run ./cmd/migrate version
+
+.PHONY: migrate-create
+migrate-create: ## Create a migration pair: make migrate-create name=create_posts_table
+	go run ./cmd/migrate create $(name)
+
+# -p 1: every package shares the test database, so packages run one at a time.
 .PHONY: test
 test: ## Run the test suite
-	go test ./...
+	go test -p 1 ./...
 
 .PHONY: lint
 lint: ## Check formatting and go.mod, then run go vet and staticcheck

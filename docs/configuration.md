@@ -68,6 +68,7 @@ All timeouts must be positive.
 | `DB_CONNECTION_MAX_LIFETIME` | `30m` | A connection is replaced after this time. |
 | `DB_CONNECTION_MAX_IDLE_TIME` | `5m` | An idle connection is closed after this time. |
 | `DB_SLOW_QUERY_THRESHOLD` | `200ms` | Queries slower than this are logged as warnings. |
+| `DB_AUTO_MIGRATE` | `false` | Apply pending migrations when the API starts. See [database.md](database.md#migrations). |
 
 Use `sslmode=require` (or stricter) in production.
 

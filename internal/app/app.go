@@ -27,7 +27,7 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg config.Config, log *slog.Logger) (*App, error) {
-	db, err := database.Connect(ctx, cfg.Database, log)
+	db, err := connectDatabase(ctx, cfg.Database, log)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,23 @@ func New(ctx context.Context, cfg config.Config, log *slog.Logger) (*App, error)
 	}
 
 	return application, nil
+}
+
+// connectDatabase connects before migrating, so an unreachable database
+// fails within the connect timeout instead of hanging in the migrator.
+func connectDatabase(ctx context.Context, cfg config.Database, log *slog.Logger) (*gorm.DB, error) {
+	db, err := database.Connect(ctx, cfg, log)
+	if err != nil || !cfg.AutoMigrate {
+		return db, err
+	}
+
+	if err := database.ApplyMigrations(ctx, cfg); err != nil {
+		return nil, errors.Join(err, database.Close(db))
+	}
+
+	log.Info("database migrations applied")
+
+	return db, nil
 }
 
 func (a *App) Close() error {

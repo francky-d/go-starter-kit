@@ -43,6 +43,7 @@ create a new top-level folder without the user's approval.
 | Path | Holds |
 | --- | --- |
 | `cmd/api/` | The `main` package: load config, build the app, run it. |
+| `cmd/migrate/` | The migration command: up, down, version, force, create. |
 | `internal/app/` | Application bootstrap and dependency wiring. |
 | `internal/config/` | Typed configuration loaded from the environment. |
 | `internal/logging/` | The `slog` logger factory. |
@@ -50,12 +51,12 @@ create a new top-level folder without the user's approval.
 | `internal/http/` | Controllers, middleware, requests, resources, `respond` (response helpers), and the fluent router wrapper over Echo. |
 | `internal/routes/` | The list of routes, registered through the router wrapper. |
 | `internal/models/` | GORM models. |
-| `internal/database/` | PostgreSQL connection pool. |
+| `internal/database/` | PostgreSQL connection pool and migration runner. |
 | `internal/repositories/` | Database access, one repository per aggregate. |
 | `internal/services/` | Business logic, independent of HTTP. |
 | `internal/auth/` | Password hashing and token handling. |
 | `internal/testutil/` | Test helpers: test database, test application, HTTP requests. |
-| `database/migrations/` | Versioned SQL migrations. |
+| `database/migrations/` | Versioned SQL migrations, embedded in the binaries. |
 | `database/init/` | SQL run once by the local PostgreSQL container; creates the test database. |
 | `docs/` | Documentation of the current state of the kit. |
 | `review/` | The code review produced by the `review` skill, updated in place. |
@@ -68,11 +69,15 @@ Run `make` to list every command.
 | Command | Effect |
 | --- | --- |
 | `make run` | Run the API. |
-| `make build` | Compile the API into `bin/api`. |
+| `make build` | Compile the API and the migrate command into `bin/`. |
 | `make docker-up` | Start PostgreSQL and wait until it is ready. |
 | `make docker-down` | Stop PostgreSQL, keeping its data. |
 | `make docker-reset` | Stop PostgreSQL and delete its data. |
 | `make docker-logs` | Follow the PostgreSQL logs. |
+| `make migrate-up` | Apply every pending migration. |
+| `make migrate-down` | Roll back the last migration. |
+| `make migrate-version` | Print the current migration version. |
+| `make migrate-create name=...` | Create an empty up/down migration pair. |
 | `make test` | Run the test suite. Needs `make docker-up` first. |
 | `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file. |

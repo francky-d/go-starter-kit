@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/francky-d/go-starter-kit/internal/app"
+	"github.com/francky-d/go-starter-kit/internal/database"
 	"github.com/francky-d/go-starter-kit/internal/logging"
 	"github.com/francky-d/go-starter-kit/internal/testutil"
 )
@@ -39,6 +40,26 @@ func TestHealth_AnswersOK(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, response.Code)
 	assert.JSONEq(t, `{"data":{"status":"ok","database":"ok"}}`, response.Body.String())
+}
+
+func TestNew_AppliesMigrationsWhenAutoMigrateIsEnabled(t *testing.T) {
+	migrator, err := database.NewMigrator(t.Context(), testutil.DatabaseConfig())
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, migrator.Close()) })
+	require.NoError(t, migrator.Up())
+	version, _, err := migrator.Version()
+	require.NoError(t, err)
+	require.NoError(t, migrator.Down(int(version)))
+
+	cfg := testutil.Config()
+	cfg.Database.AutoMigrate = true
+	application, err := app.New(t.Context(), cfg, logging.Discard())
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, application.Close()) })
+
+	migrated, _, err := migrator.Version()
+	require.NoError(t, err)
+	assert.Equal(t, version, migrated)
 }
 
 func TestNew_FailsWhenTheDatabaseIsUnreachable(t *testing.T) {

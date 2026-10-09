@@ -58,6 +58,7 @@ type Database struct {
 	ConnectionMaxLifetime time.Duration `env:"DB_CONNECTION_MAX_LIFETIME" envDefault:"30m"`
 	ConnectionMaxIdleTime time.Duration `env:"DB_CONNECTION_MAX_IDLE_TIME" envDefault:"5m"`
 	SlowQueryThreshold    time.Duration `env:"DB_SLOW_QUERY_THRESHOLD" envDefault:"200ms"`
+	AutoMigrate           bool          `env:"DB_AUTO_MIGRATE" envDefault:"false"`
 }
 
 // Load reads the optional .env file, then the environment. A variable
