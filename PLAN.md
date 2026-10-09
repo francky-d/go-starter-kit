@@ -3,6 +3,10 @@
 This board tracks the work on the starter kit. Each row is one task, and each
 task ships as exactly one atomic commit.
 
+**Status:** the initial build is complete; every task of phases 1 to 9 is
+done. The [follow-ups](#follow-ups) found during the build wait for a
+decision.
+
 ## How to use this board
 
 - **Statuses:** `todo`, `in progress`, `done`.
@@ -13,7 +17,8 @@ task ships as exactly one atomic commit.
   trailing `[skip ci]` on documentation-only commits.
 - **Add a task:** append a row with the next free number. Never renumber
   existing rows.
-- **Adopting the kit:** clear the tables and start your own backlog.
+- **Adopting the kit:** keep this section, delete the tables below, and
+  start your own backlog from row 1.
 
 ## Phase 1 - Repository skeleton and agent files
 
@@ -85,7 +90,7 @@ task ships as exactly one atomic commit.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 26 | Complete README and documentation index | `docs: complete README and documentation index` | done |
-| 27 | Close the project board | `docs: close project board` | todo |
+| 27 | Close the project board | `docs: close project board` | done |
 
 ## Added during the build
 
@@ -93,3 +98,15 @@ task ships as exactly one atomic commit.
 | --- | --- | --- | --- |
 | 28 | Readability conventions: single-purpose functions, comments only when necessary | `refactor: apply readability conventions to existing code` | done |
 | 29 | Remove the unused `App.IsProduction` helper | `refactor(config): remove unused IsProduction helper` | done |
+
+## Follow-ups
+
+Found during the build and left for a decision. Each one is picked up like
+any other task.
+
+| # | Task | Commit | Status |
+| --- | --- | --- | --- |
+| 30 | Upgrade `golang.org/x/net` to v0.60.0: four advisories reachable through Echo | `build: upgrade golang.org/x/net to v0.60.0` | todo |
+| 31 | Run `govulncheck` in CI, at a pinned version (after row 30, or CI fails) | `ci: run govulncheck` | todo |
+| 32 | Purge expired refresh tokens, with its caller: a migrate-style command or a documented scheduled job | `feat(auth): purge expired refresh tokens` | todo |
+| 33 | Choose a license and add the `LICENSE` file | `chore: add license` | todo |
