@@ -9,13 +9,13 @@ The code of this kit reads like plain English. A reader should understand
 what a function does from its call site alone:
 
 ```go
-api.Group("/auth").Middleware(rateLimit).
-    Post("/register", authController.Register).
-    Post("/login", authController.Login)
+authentication.Middleware(d.CredentialsRateLimit).
+    Post("/register", d.Auth.Register).
+    Post("/login", d.Auth.Login)
 
 user, err := users.FindByEmail(ctx, email)
 
-return respond.Created(c, resources.NewUser(user))
+return respond.Created(c, resources.NewSession(session))
 ```
 
 Readability never wins over idiomatic Go: errors are values, `ctx` flows
@@ -108,12 +108,15 @@ The kit applies SOLID the Go way.
   returns an `apperror` the error handler turns into 400 (malformed body),
   415 (not JSON) or 422 (invalid fields).
 - Validation messages are keyed by the JSON field name.
-- Limit every string: `max=` on free text, `max=72` on passwords.
+- Limit every string: `max=` on free text, `max=72` on a new password.
 - bcrypt rejects passwords longer than 72 **bytes**, while `max=72` counts
   characters: a 72-character password with accents passes validation and
   still fails hashing. The password hasher therefore checks the byte length
   and the service maps that failure to a 422 on the `password` field, never
   to a 500.
+- Credentials being checked (a login) get no format rule, only `required`
+  and a generous `max` that bounds the input: a wrong value is a wrong
+  credential, and must get the same answer as any other.
 
 ## 5. Responses
 
@@ -197,9 +200,10 @@ The kit applies SOLID the Go way.
   and `assert` for checks. Use `t.Run` sub-tests for cases.
 - Tests that need the database use the real PostgreSQL test database through
   the `internal/testutil` helpers. Do not mock GORM.
-- HTTP tests go through the real application handler with `httptest`, so
-  middleware, routing and the error handler are exercised too.
-- Test names say what they prove: `TestLogin_UnknownEmailAndWrongPasswordLookTheSame`.
+- HTTP tests go through the real application handler with
+  `testutil.NewClient`, so middleware, routing and the error handler are
+  exercised too.
+- Test names say what they prove: `TestLogin_AnswersTheSameForAnUnknownEmailAndAWrongPassword`.
 
 ## 12. Formatting and comments
 

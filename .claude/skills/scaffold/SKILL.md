@@ -153,8 +153,9 @@ func (pc *ProjectController) Create(c echo.Context) error {
 
 ## Step 8 - Wiring and routes
 
-1. Build the repository, service and controller in the application wiring
-   (`internal/app`) with their constructors.
+1. Build the repository, service and controller in
+   `internal/app/dependencies.go` with their constructors, next to the
+   existing ones.
 2. Add the controller to the route dependencies (`routes.Dependencies`).
 3. Register the routes behind the authentication middleware, in
    `internal/routes/routes.go`:
@@ -171,7 +172,9 @@ api.Group("/projects").Middleware(d.Authenticated).
 ## Step 9 - HTTP tests
 
 `internal/http/controllers/project_controller_test.go`, through the real
-application with the `internal/testutil` helpers. Cover at least:
+application with `testutil.NewClient`; reuse the `newClient` and
+`register` helpers of `auth_controller_test.go` to get a user and an access
+token. Cover at least:
 
 - the happy path of each endpoint (status and body);
 - 401 without a token;

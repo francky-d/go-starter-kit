@@ -84,7 +84,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 26 | Complete README and documentation index | `docs: complete README and documentation index` | todo |
+| 26 | Complete README and documentation index | `docs: complete README and documentation index` | done |
 | 27 | Close the project board | `docs: close project board` | todo |
 
 ## Added during the build

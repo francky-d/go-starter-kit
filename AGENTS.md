@@ -8,7 +8,8 @@ loaded at the start of every session. Read it fully before acting.
 A starter kit for building REST APIs in Go. It provides an HTTP layer on
 Echo, persistence with GORM and PostgreSQL, versioned SQL migrations, and a
 user authentication module issuing JWT access tokens with rotating refresh
-tokens.
+tokens. It ships with tests against a real database, a Docker image and a
+CI workflow.
 
 The code is written to **read like plain English**: fluent chaining where Go
 allows it (routes, responses, queries, validation), descriptive names

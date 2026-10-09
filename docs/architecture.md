@@ -40,6 +40,8 @@ main
  ├─ app.New(ctx, cfg, log)
  │   ├─ database.Connect   open the pool, fail within DB_CONNECT_TIMEOUT if unreachable
  │   ├─ migrations         applied here only when DB_AUTO_MIGRATE=true
+ │   ├─ dependencies       repositories, services, controllers and middleware,
+ │   │                     each built by its constructor (internal/app/dependencies.go)
  │   └─ routes             build Echo, install the error handler, register routes
  ├─ app.Run(ctx)           listen on HTTP_PORT and serve
  │   └─ SIGINT / SIGTERM   stop accepting connections,
@@ -109,9 +111,10 @@ The client IP comes from the TCP peer, or from `X-Forwarded-For` when
 HTTP request
  └─ baseline middleware
      └─ Echo router ─ no route? ───────────────────┐
-         └─ controller                             │
-             ├─ success ─ respond.OK / Created     │
-             └─ return err ────────────────────────┤
+         └─ route middleware ─ refused? ───────────┤  rate limit, authentication
+             └─ controller                         │
+                 ├─ success ─ respond.OK / Created │
+                 └─ return err ────────────────────┤
                                                    ▼
                                    respond.ErrorHandler
                                     ├─ *apperror.Error  → its status, message, field errors

@@ -51,9 +51,9 @@ It is the entry point for a developer who has not read the code yet.
 | Package boundary, dependency, request lifecycle | `docs/architecture.md` |
 | Table, column, index, migration, model | `docs/database.md` |
 | Command, prerequisite, setup step | `docs/getting-started.md` and the Commands section of `AGENTS.md` |
-| Test helper, way to run tests | `docs/testing.md` |
+| Test helper, way to run tests, CI workflow | `docs/testing.md` |
 | Coding convention | `docs/conventions.md` and the `conventions` skill |
-| Container image, Compose, CI, deployment | `docs/deployment.md` |
+| Container image, Compose services, deployment | `docs/deployment.md` |
 | User-visible feature of the kit | the feature list in `README.md` |
 
 If a destination file does not exist yet, create it and add it to the
