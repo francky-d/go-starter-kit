@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request cancels the older run. Each run on main
+# gets its own group, so none is cancelled or skipped: every commit there
+# keeps its own result.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://app:app@localhost:5432/app_test?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The latest 1.26 patch, not the minimum in go.mod: older patches of
+      # the standard library carry known vulnerabilities.
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.x"
+          check-latest: true
+
+      - name: Build
+        run: go build ./...
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: go test -race -p 1 ./...
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        run: docker build --tag go-starter-kit:ci .

@@ -34,6 +34,8 @@ without `Authenticated`: a wiring bug, not a client error).
 | Logging | `log/slog` |
 | Tests | `testing`, `github.com/stretchr/testify`, a real PostgreSQL database |
 | Linting | `gofmt`, `go vet`, `staticcheck` |
+| Container | Multi-stage `Dockerfile`, distroless runtime image |
+| Continuous integration | GitHub Actions: build, lint, tests with the race detector, Docker image build |
 
 Do not add, remove or upgrade a dependency without the user's approval.
 
@@ -63,6 +65,7 @@ create a new top-level folder without the user's approval.
 | `docs/` | Documentation of the current state of the kit. |
 | `review/` | The code review produced by the `review` skill, updated in place. |
 | `.claude/skills/` | Skills for Claude Code; also readable as convention guides. |
+| `.github/workflows/` | The CI workflow. |
 
 ## Commands
 

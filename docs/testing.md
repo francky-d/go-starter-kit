@@ -44,6 +44,30 @@ log in again, then present an exchanged refresh token and check that
 every session is revoked. It covers how the endpoints work together,
 which the tests of each endpoint do not.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` checks every push to `main` and every pull
+request with two jobs.
+
+**Lint and test** runs the same commands as a local run, with the latest
+Go 1.26 patch:
+
+1. `go build ./...`
+2. `make lint`
+3. `go test -race -p 1 ./...`, against a PostgreSQL 17 service container
+   reached through `TEST_DATABASE_URL`. The race detector also checks the
+   concurrent tests, such as two refreshes of the same token.
+
+**Docker image** builds the `Dockerfile`, so a change that breaks the
+image fails like a failing test.
+
+A newer push to a pull request cancels its run still in progress; runs on
+`main` always complete. A commit whose message contains `[skip ci]` is not
+checked: the commit skill adds it only when every changed file is
+Markdown. If a branch protection rule requires the CI checks, a pull
+request whose last commit skipped CI cannot be merged until a new commit
+runs them.
+
 ## Helpers
 
 The `internal/testutil` package provides:
