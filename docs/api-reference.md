@@ -68,4 +68,19 @@ Error messages are written to be safe for any client:
 
 ## Endpoints
 
-No endpoint exists yet.
+| Method | Path | Authentication | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/health` | none | Report whether the application can serve requests. |
+
+### `GET /health`
+
+Answers `200` while the application is able to serve requests. Load
+balancers and container orchestrators use it as a liveness probe.
+
+```bash
+curl -s http://localhost:8080/health
+```
+
+```json
+{ "data": { "status": "ok" } }
+```

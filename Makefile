@@ -6,6 +6,14 @@
 help: ## List the available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+.PHONY: run
+run: ## Run the API (reads .env when present)
+	go run ./cmd/api
+
+.PHONY: build
+build: ## Compile the API into bin/api
+	go build -trimpath -o bin/api ./cmd/api
+
 .PHONY: test
 test: ## Run the test suite
 	go test ./...

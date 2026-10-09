@@ -65,6 +65,8 @@ Run `make` to list every command.
 
 | Command | Effect |
 | --- | --- |
+| `make run` | Run the API. |
+| `make build` | Compile the API into `bin/api`. |
 | `make test` | Run the test suite. |
 | `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file. |
