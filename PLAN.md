@@ -9,7 +9,8 @@ task ships as exactly one atomic commit.
 - **Start a task:** set its status to `in progress`. Only one task is in
   progress at a time.
 - **Finish a task:** set its status to `done` in the same commit as the work
-  itself. The commit subject matches the **Commit** column.
+  itself. The commit subject matches the **Commit** column, apart from a
+  trailing `[skip ci]` on documentation-only commits.
 - **Add a task:** append a row with the next free number. Never renumber
   existing rows.
 - **Adopting the kit:** clear the tables and start your own backlog.
@@ -20,7 +21,7 @@ task ships as exactly one atomic commit.
 | --- | --- | --- | --- |
 | 1 | Repository skeleton and project board | `chore: add repository skeleton and project board` | done |
 | 2 | Agent instructions and Claude Code settings | `docs: add agent instructions and Claude Code settings` | done |
-| 3 | Commit and docs skills | `docs: add commit and docs skills` | todo |
+| 3 | Commit and docs skills | `docs: add commit and docs skills` | done |
 | 4 | Conventions skill and conventions overview | `docs: add conventions skill and conventions overview` | todo |
 | 5 | Scaffold and review skills | `docs: add scaffold and review skills` | todo |
 

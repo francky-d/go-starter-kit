@@ -10,7 +10,10 @@ Claude Code.
 Project skills live in `.claude/skills/`. Activate the relevant skill as soon
 as you work in its domain, not only when you are stuck.
 
-No project skills exist yet.
+| Skill | Activate when |
+| --- | --- |
+| `commit` | Committing, writing a commit message, or finishing a task on the board |
+| `docs` | Before every commit (the commit skill calls it), or when asked to write or check documentation |
 
 ## Settings
 
