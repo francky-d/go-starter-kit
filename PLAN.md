@@ -23,7 +23,7 @@ task ships as exactly one atomic commit.
 | 2 | Agent instructions and Claude Code settings | `docs: add agent instructions and Claude Code settings` | done |
 | 3 | Commit and docs skills | `docs: add commit and docs skills` | done |
 | 4 | Conventions skill and conventions overview | `docs: add conventions skill and conventions overview` | done |
-| 5 | Scaffold and review skills | `docs: add scaffold and review skills` | todo |
+| 5 | Scaffold and review skills | `docs: add scaffold and review skills` | done |
 
 ## Phase 2 - Module, configuration, logging and bootstrap
 

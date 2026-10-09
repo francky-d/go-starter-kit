@@ -55,6 +55,7 @@ create a new top-level folder without the user's approval.
 | `internal/testutil/` | Test helpers: test database, test application, HTTP requests. |
 | `database/migrations/` | Versioned SQL migrations. |
 | `docs/` | Documentation of the current state of the kit. |
+| `review/` | The code review produced by the `review` skill, updated in place. |
 | `.claude/skills/` | Skills for Claude Code; also readable as convention guides. |
 
 ## Commands
