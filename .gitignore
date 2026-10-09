@@ -1,0 +1,19 @@
+# Environment files (secrets). Only .env.example is committed.
+.env*
+!.env.example
+
+# Build and live-reload output
+/bin/
+/tmp/
+
+# Test output
+coverage.out
+coverage.html
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Claude Code personal settings
+.claude/settings.local.json
