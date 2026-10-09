@@ -1,4 +1,3 @@
-// Package logging builds the structured logger shared by the application.
 package logging
 
 import (
@@ -8,8 +7,6 @@ import (
 	"github.com/francky-d/go-starter-kit/internal/config"
 )
 
-// New returns a logger that writes to output in the configured format and
-// drops records below the configured level.
 func New(cfg config.Log, output io.Writer) *slog.Logger {
 	options := &slog.HandlerOptions{Level: cfg.Level}
 
@@ -21,8 +18,6 @@ func New(cfg config.Log, output io.Writer) *slog.Logger {
 	}
 }
 
-// Discard returns a logger that drops every record. Tests use it to keep
-// their output readable.
 func Discard() *slog.Logger {
 	return slog.New(slog.DiscardHandler)
 }

@@ -23,6 +23,14 @@ router -> middleware -> controller -> service -> repository -> database
 
 ## Key rules
 
+- **One function, one job.** A function does exactly what its name says.
+  Steps are extracted into named private functions; aim for 20 to 25
+  lines.
+- **Small interfaces, declared by their consumer**, and only when a test or
+  a second implementation needs one.
+- **Comments only when necessary.** The code explains itself; a comment
+  explains a concept, a constraint or a deliberate choice, never what a
+  name already says.
 - **Names say what things do.** `users.FindByEmail(ctx, email)`,
   `respond.Created(c, resources.NewUser(user))`.
 - **Explicit dependencies.** Every type is built by a `NewXxx` constructor

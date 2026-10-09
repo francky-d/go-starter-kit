@@ -49,7 +49,41 @@ A service may open a transaction with `db.Transaction(...)` and hand `tx`
 to repositories through their `WithTx(tx)` method. It never builds a query
 itself.
 
-## 2. Naming
+## 2. Design: one function, one job
+
+The kit applies SOLID the Go way.
+
+- **A function does exactly what its name says, and nothing else.** When
+  a function needs "and" to describe it, split it.
+- **Short functions.** Aim for 20 to 25 lines. Extract each step into a
+  well-named private function so the top-level function reads like a
+  sentence:
+
+  ```go
+  func (a *App) Serve(ctx context.Context, listener net.Listener) error {
+      server := a.newServer()
+      serving := startServing(server, listener)
+
+      select {
+      case err := <-serving:
+          return fmt.Errorf("app: serve: %w", err)
+      case <-ctx.Done():
+          return a.shutDown(ctx, server, serving)
+      }
+  }
+  ```
+
+- **One reason to change per type.** A controller handles HTTP, a service
+  holds rules, a repository holds queries. A type that does two of these
+  is split.
+- **Small interfaces, declared by the consumer.** A component that only
+  pings the database depends on `interface{ PingContext(context.Context) error }`,
+  not on `*sql.DB`. Declare the interface next to the code that uses it.
+- **No interface by reflex.** Do not put an interface in front of every
+  struct. Add one when a test or a second implementation needs it.
+- **Dependencies are injected** through constructors (see Naming).
+
+## 3. Naming
 
 - **Files:** `snake_case.go`, named after the main type:
   `user_repository.go`, `auth_controller.go`.
@@ -64,7 +98,7 @@ itself.
   returns nothing yields `repositories.ErrNotFound`, never `nil, nil`.
 - **No stutter:** `auth.TokenIssuer`, not `auth.AuthTokenIssuer`.
 
-## 3. Requests and validation
+## 4. Requests and validation
 
 - One struct per endpoint input, in `internal/http/requests`, with `json`
   and `validate` tags (`github.com/go-playground/validator/v10`).
@@ -78,7 +112,7 @@ itself.
   and the service maps that failure to a 422 on the `password` field, never
   to a 500.
 
-## 4. Responses
+## 5. Responses
 
 - Success responses go through `respond`: `respond.OK`, `respond.Created`,
   `respond.NoContent`, `respond.Paginated`. Never call `c.JSON` in a
@@ -88,7 +122,7 @@ itself.
 - Never serialise a model directly. Map it through a resource
   (`resources.NewUser(user)`) so a new column never leaks by accident.
 
-## 5. Errors
+## 6. Errors
 
 - Services and middleware return `*apperror.Error` values:
   `apperror.BadRequest(msg)`, `apperror.Unauthorized()`,
@@ -113,7 +147,7 @@ itself.
   (`repositories.ErrNotFound`, `repositories.ErrDuplicate`) so services
   never depend on GORM error values.
 
-## 6. Configuration
+## 7. Configuration
 
 - Configuration is read once, at startup, into the typed struct of
   `internal/config`. Pass the part a component needs to its constructor.
@@ -122,7 +156,7 @@ itself.
   (`env:"NAME,required"`) when not,
   a line in `.env.example`, and a row in `docs/configuration.md`.
 
-## 7. Context and logging
+## 8. Context and logging
 
 - Every function that does I/O takes `ctx context.Context` as its first
   parameter. Controllers pass `c.Request().Context()`.
@@ -131,7 +165,7 @@ itself.
   `log.Error("refresh failed", "user_id", id, "error", err)`. Never log
   passwords, tokens, secrets or full request bodies.
 
-## 8. Models
+## 9. Models
 
 - Embed `models.Base`: UUID v7 primary key set in `BeforeCreate`,
   `CreatedAt`, `UpdatedAt`.
@@ -140,7 +174,7 @@ itself.
 - Sensitive fields carry `json:"-"` as a second line of defence; resources
   remain the first.
 
-## 9. Migrations
+## 10. Migrations
 
 - One change per migration, created with `make migrate-create name=...`.
   Every `up` file has a `down` file that reverses it.
@@ -151,7 +185,7 @@ itself.
 - Index every foreign key and every column that queries filter or join
   on, unless the primary key already narrows the query.
 
-## 10. Tests
+## 11. Tests
 
 - Every change is tested. Test files sit next to the code
   (`user_repository_test.go`).
@@ -163,8 +197,24 @@ itself.
   middleware, routing and the error handler are exercised too.
 - Test names say what they prove: `TestLogin_UnknownEmailAndWrongPasswordLookTheSame`.
 
-## 11. Formatting and comments
+## 12. Formatting and comments
 
-- `gofmt`, `go vet` and `staticcheck` must pass.
-- Exported identifiers have a doc comment that starts with their name.
-- Comments explain *why*. The code already says *what*.
+- `gofmt`, `go vet` and `staticcheck` must pass (`make lint`).
+- **The code explains itself.** Names, small functions and types carry the
+  meaning. A comment is the exception, not the rule.
+- **Write a comment only when the code cannot say it:** a concept, a
+  constraint, a non-obvious line or a deliberate choice. It explains *why*.
+- **Never restate a name or a signature.** `// NewUserRepository returns a
+  UserRepository` is noise; delete it.
+- **Package comment:** one sentence, only when the role of the package is
+  not obvious from its name or carries a rule (for example "the only
+  package allowed to read the environment").
+
+Good comments, kept because the code cannot express them:
+
+```go
+// ctx is already cancelled here, hence the timeout derives from
+// context.WithoutCancel(ctx).
+
+// Echo may put parser details in its message, so only the status is kept.
+```
