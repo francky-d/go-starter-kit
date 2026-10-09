@@ -16,6 +16,7 @@ import (
 	"github.com/francky-d/go-starter-kit/internal/database"
 	"github.com/francky-d/go-starter-kit/internal/http/controllers"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
+	"github.com/francky-d/go-starter-kit/internal/http/router"
 	"github.com/francky-d/go-starter-kit/internal/routes"
 )
 
@@ -67,7 +68,7 @@ func (a *App) registerRoutes() error {
 		return fmt.Errorf("app: %w", err)
 	}
 
-	routes.Register(a.echo, routes.Dependencies{
+	routes.Register(router.New(a.echo), routes.Dependencies{
 		Health: controllers.NewHealthController(pool),
 	})
 

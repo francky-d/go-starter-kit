@@ -15,6 +15,7 @@ through the code, and where each responsibility lives.
 | `internal/app` | Wires every dependency with explicit constructors and runs the HTTP server. |
 | `internal/database` | Opens the PostgreSQL connection pool used through GORM, and runs the embedded migrations. |
 | `internal/routes` | Declares every route in one place. |
+| `internal/http/router` | Fluent wrapper over Echo routing: groups, middleware and routes declared as a chain. |
 | `internal/http/controllers` | HTTP handlers. A controller returns a response or an error, never an error body. |
 | `internal/http/respond` | Success envelopes and the central error handler. |
 | `internal/apperror` | Errors that carry an HTTP status and a client-safe message. |
@@ -48,6 +49,28 @@ Every log record carries the `app` and `environment` attributes.
 The server applies the read, write and idle timeouts from the
 [configuration](configuration.md#http-server), so a slow or idle client
 cannot hold a connection forever.
+
+## Routes
+
+Every route is declared in `internal/routes/routes.go` through the router
+wrapper, so the routing table reads as a list:
+
+```go
+api := r.Group("/api/v1")
+
+api.Group("/auth").Middleware(rateLimit).
+    Post("/register", auth.Register).
+    Post("/login", auth.Login)
+
+api.Middleware(authenticated).Get("/me", users.Me)
+```
+
+- `Group(prefix, middleware...)` and `Middleware(middleware...)` return a
+  new router and leave the receiver unchanged, so the order in which groups
+  and middleware are declared never matters.
+- Group middleware runs before route middleware, in declaration order.
+- Middleware only runs on routes that exist: an unknown URL under a
+  protected prefix answers `404`, not `401`.
 
 ## Request lifecycle
 
