@@ -1,7 +1,8 @@
 # Authentication
 
-This page describes how the kit protects user credentials and how it
-issues and checks access tokens and refresh tokens.
+This page describes how the kit protects user credentials, how it issues
+and checks access tokens and refresh tokens, and how sessions start, renew
+and end.
 
 ## Passwords
 
@@ -10,7 +11,9 @@ password is never stored or logged.
 
 - **Work factor:** `BCRYPT_COST` (default `12`). Each step doubles the
   time to hash and to verify, which slows down an attacker who obtains the
-  hashes. See [configuration.md](configuration.md#authentication).
+  hashes. See [configuration.md](configuration.md#authentication). After a
+  change, each existing hash is replaced at the next successful login of
+  its user.
 - **Salt:** every hash has its own random salt, so two users with the same
   password get different hashes.
 - **Length:** bcrypt only reads the first 72 bytes of a password. Longer
@@ -20,7 +23,10 @@ password is never stored or logged.
   characters.
 - **Unknown accounts:** when a login names an email that does not exist,
   the hasher still runs a full bcrypt comparison against a dummy hash, so
-  the response time does not reveal which emails have an account.
+  the response time does not reveal which emails have an account. Until
+  every hash has been upgraded after a change of `BCRYPT_COST`, old
+  hashes verify at their old cost, which a precise timing could tell
+  apart.
 
 ## Access tokens
 
@@ -72,7 +78,66 @@ encoded as 43 URL-safe base64 characters.
   plain hash is enough here, unlike passwords: 256 random bits cannot be
   guessed from their hash.
 - **Lifetime:** `REFRESH_TOKEN_LIFETIME` (30 days by default).
-- **Revocation:** a refresh token can be revoked at any time. A revoked
-  token is kept, so that presenting it again can be detected.
+- **Revocation:** a refresh token can be revoked at any time. Revoked
+  tokens are kept, so that a stolen token can be recognised when it is
+  presented again (see [Refreshing a session](#refreshing-a-session)).
 - **Secret rotation:** refresh tokens do not depend on `JWT_SECRET`, so
   changing the secret does not revoke them.
+
+## Sessions
+
+A session is a pair of tokens: a short-lived access token and the refresh
+token that renews it. Every user can have several sessions at once, one
+per device.
+
+### Registering
+
+Registration creates the user and starts a session. The email is stored
+trimmed and in lowercase, so `Ada@Example.com` and `ada@example.com` are
+the same account.
+
+An email that already has an account is refused with
+`Unable to register with the provided details.`. This message does reveal
+that the email is taken: hiding it would need an email verification flow,
+which the kit does not have.
+
+### Logging in
+
+Login starts a new session. An unknown email, a wrong password and a
+password longer than 72 bytes all get the same `Invalid credentials.`
+error, after the same bcrypt work.
+
+### Refreshing a session
+
+Exchanging a refresh token returns a new session and revokes the old
+token, which records the new token as its replacement. Each refresh token
+can therefore be used once.
+
+A refresh token presented after it was already exchanged means that two
+parties hold it: the client and someone who stole it. The API cannot tell
+which one is legitimate, so it revokes **every** refresh token of the
+user, and every device must sign in again. The event is logged as a
+warning with the user id.
+
+The same happens when a client sends the same refresh token twice: two
+browser tabs refreshing at the same time, or a refresh whose response was
+lost in the network and that the client retries with the old token. Only
+one exchange can succeed; the other counts as a reuse. Clients should
+serialise their refresh calls, and sign in again when a refresh gets no
+response, instead of retrying with the same token: the retry would also
+sign out every other device.
+
+An expired token, a token revoked by a logout and an unknown token are
+refused without revoking anything else.
+
+### Logging out
+
+Logout revokes the refresh token it receives; the other sessions of the
+user stay open. Holding the refresh token is enough: no access token is
+needed, so a client can sign out after its access token has expired. An
+unknown or already revoked token is accepted silently, so logging out
+twice is not an error.
+
+The access token of the session stays valid until it expires, at most
+`ACCESS_TOKEN_LIFETIME`. Clients should delete both tokens when they log
+out.

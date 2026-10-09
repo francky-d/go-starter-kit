@@ -72,6 +72,20 @@ func TestUserRepository_NormalizesEmailsOnCreateAndLookup(t *testing.T) {
 	assert.ErrorIs(t, users.Create(t.Context(), newUser("ada@EXAMPLE.com")), repositories.ErrDuplicate)
 }
 
+func TestUserRepository_UpdatesThePasswordHash(t *testing.T) {
+	users := repositories.NewUserRepository(testutil.DB(t))
+	user := newUser("ada@example.com")
+	require.NoError(t, users.Create(t.Context(), user))
+
+	require.NoError(t, users.UpdatePasswordHash(t.Context(), user.ID, "new hash"))
+
+	updated, err := users.FindByID(t.Context(), user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "new hash", updated.PasswordHash)
+	assert.True(t, updated.UpdatedAt.After(user.UpdatedAt))
+	assert.ErrorIs(t, users.UpdatePasswordHash(t.Context(), uuid.Must(uuid.NewV7()), "hash"), repositories.ErrNotFound)
+}
+
 func TestUserRepository_WithTxWritesInsideTheTransaction(t *testing.T) {
 	db := testutil.DB(t)
 	users := repositories.NewUserRepository(db)

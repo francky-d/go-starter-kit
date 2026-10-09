@@ -37,6 +37,15 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 	return r.findOne(ctx, "email = ?", models.NormalizeEmail(email))
 }
 
+func (r *UserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, hash string) error {
+	result := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Update("password_hash", hash)
+	if result.Error == nil && result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return translate(result.Error)
+}
+
 func (r *UserRepository) findOne(ctx context.Context, condition string, value any) (*models.User, error) {
 	var user models.User
 	if err := r.db.WithContext(ctx).Where(condition, value).Take(&user).Error; err != nil {

@@ -81,6 +81,17 @@ func TestPasswordHasher_UsesTheConfiguredCost(t *testing.T) {
 	assert.Equal(t, bcrypt.MinCost+1, cost)
 }
 
+func TestPasswordHasher_NeedsRehashOnlyForAnotherCost(t *testing.T) {
+	older := newHasher(t)
+	hash, err := older.Hash("password")
+	require.NoError(t, err)
+	newer, err := auth.NewPasswordHasher(bcrypt.MinCost + 1)
+	require.NoError(t, err)
+
+	assert.False(t, older.NeedsRehash(hash))
+	assert.True(t, newer.NeedsRehash(hash))
+}
+
 func TestPasswordHasher_SimulateVerifyTakesAsLongAsAVerification(t *testing.T) {
 	hasher, err := auth.NewPasswordHasher(10)
 	require.NoError(t, err)

@@ -62,6 +62,15 @@ func (h *PasswordHasher) Verify(hash, password string) error {
 	return err
 }
 
+// NeedsRehash reports whether hash was made with another cost than the
+// configured one. Login replaces such a hash, so that raising BCRYPT_COST
+// eventually applies to every account.
+func (h *PasswordHasher) NeedsRehash(hash string) bool {
+	cost, err := bcrypt.Cost([]byte(hash))
+
+	return err == nil && cost != h.cost
+}
+
 // SimulateVerify spends the time of a real verification. Login calls it when
 // the email is unknown, so response times do not reveal which emails exist.
 func (h *PasswordHasher) SimulateVerify(password string) {
