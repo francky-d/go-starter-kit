@@ -60,7 +60,14 @@ create a new top-level folder without the user's approval.
 
 ## Commands
 
-No build commands exist yet. This section lists them as they are added.
+Run `make` to list every command.
+
+| Command | Effect |
+| --- | --- |
+| `make test` | Run the test suite. |
+| `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
+| `make fmt` | Format every Go file. |
+| `make tidy` | Sync `go.mod` and `go.sum` with the imports. |
 
 ## Working rules
 

@@ -56,8 +56,7 @@ or fixed by a later commit?), then review the most changed areas.
 
 ```bash
 go build ./...
-go vet ./...
-staticcheck ./...
+make lint                                               # gofmt, go vet, staticcheck
 go run golang.org/x/vuln/cmd/govulncheck@latest ./...   # known CVEs in dependencies
 make test                                               # state of the suite
 ```

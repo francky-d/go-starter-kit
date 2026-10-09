@@ -29,7 +29,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 6 | Go module and typed configuration loading | `feat(config): initialize module and typed configuration loading` | todo |
+| 6 | Go module and typed configuration loading | `feat(config): initialize module and typed configuration loading` | done |
 | 7 | Structured logger factory | `feat(logging): add slog logger factory` | todo |
 | 8 | Response envelope and application errors | `feat(http): add response envelope and application error handling` | todo |
 | 9 | Server bootstrap, graceful shutdown, health endpoint | `feat(app): add server bootstrap with graceful shutdown and health endpoint` | todo |

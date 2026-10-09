@@ -118,7 +118,8 @@ itself.
 - Configuration is read once, at startup, into the typed struct of
   `internal/config`. Pass the part a component needs to its constructor.
 - Never call `os.Getenv` outside `internal/config`.
-- A new variable gets a default when one is safe, a `required` tag when not,
+- A new variable gets a default when one is safe, the `required` option
+  (`env:"NAME,required"`) when not,
   a line in `.env.example`, and a row in `docs/configuration.md`.
 
 ## 7. Context and logging

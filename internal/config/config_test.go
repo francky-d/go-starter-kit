@@ -1,0 +1,141 @@
+package config_test
+
+import (
+	"log/slog"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/francky-d/go-starter-kit/internal/config"
+)
+
+// knownVariables lists every variable the configuration reads, so tests
+// start from a clean environment whatever the developer's shell exports.
+var knownVariables = []string{
+	"APP_NAME", "APP_ENV",
+	"HTTP_PORT", "HTTP_READ_HEADER_TIMEOUT", "HTTP_READ_TIMEOUT",
+	"HTTP_WRITE_TIMEOUT", "HTTP_IDLE_TIMEOUT", "HTTP_SHUTDOWN_TIMEOUT",
+	"LOG_LEVEL", "LOG_FORMAT",
+}
+
+func clearEnvironment(t *testing.T) {
+	t.Helper()
+	for _, name := range knownVariables {
+		t.Setenv(name, "") // registers the original value for restoration
+		require.NoError(t, os.Unsetenv(name))
+	}
+}
+
+func TestFromEnvironment_AppliesDefaults(t *testing.T) {
+	clearEnvironment(t)
+
+	cfg, err := config.FromEnvironment()
+
+	require.NoError(t, err)
+	assert.Equal(t, "go-starter-kit", cfg.App.Name)
+	assert.Equal(t, config.EnvironmentDevelopment, cfg.App.Environment)
+	assert.Equal(t, 8080, cfg.HTTP.Port)
+	assert.Equal(t, 5*time.Second, cfg.HTTP.ReadHeaderTimeout)
+	assert.Equal(t, 10*time.Second, cfg.HTTP.ReadTimeout)
+	assert.Equal(t, 30*time.Second, cfg.HTTP.WriteTimeout)
+	assert.Equal(t, 60*time.Second, cfg.HTTP.IdleTimeout)
+	assert.Equal(t, 10*time.Second, cfg.HTTP.ShutdownTimeout)
+	assert.Equal(t, slog.LevelInfo, cfg.Log.Level)
+	assert.Equal(t, config.LogFormatJSON, cfg.Log.Format)
+}
+
+func TestFromEnvironment_ReadsVariables(t *testing.T) {
+	clearEnvironment(t)
+	t.Setenv("APP_NAME", "billing-api")
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("HTTP_PORT", "9000")
+	t.Setenv("HTTP_WRITE_TIMEOUT", "45s")
+	t.Setenv("LOG_LEVEL", "debug")
+	t.Setenv("LOG_FORMAT", "text")
+
+	cfg, err := config.FromEnvironment()
+
+	require.NoError(t, err)
+	assert.Equal(t, "billing-api", cfg.App.Name)
+	assert.True(t, cfg.App.IsProduction())
+	assert.Equal(t, 9000, cfg.HTTP.Port)
+	assert.Equal(t, 45*time.Second, cfg.HTTP.WriteTimeout)
+	assert.Equal(t, slog.LevelDebug, cfg.Log.Level)
+	assert.Equal(t, config.LogFormatText, cfg.Log.Format)
+}
+
+func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
+	cases := []struct {
+		name     string
+		variable string
+		value    string
+		mentions string // the variable name, or the bad value for parse errors
+	}{
+		{"unknown environment", "APP_ENV", "staging", "APP_ENV"},
+		{"port out of range", "HTTP_PORT", "70000", "HTTP_PORT"},
+		{"port not a number", "HTTP_PORT", "http", `"http"`},
+		{"negative timeout", "HTTP_READ_TIMEOUT", "-1s", "HTTP_READ_TIMEOUT"},
+		{"unknown log level", "LOG_LEVEL", "verbose", `"verbose"`},
+		{"unknown log format", "LOG_FORMAT", "xml", "LOG_FORMAT"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			clearEnvironment(t)
+			t.Setenv(tc.variable, tc.value)
+
+			_, err := config.FromEnvironment()
+
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.mentions)
+		})
+	}
+}
+
+func TestValidate_ReportsEveryProblemAtOnce(t *testing.T) {
+	clearEnvironment(t)
+	t.Setenv("APP_ENV", "staging")
+	t.Setenv("HTTP_PORT", "0")
+
+	_, err := config.FromEnvironment()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "APP_ENV")
+	assert.Contains(t, err.Error(), "HTTP_PORT")
+}
+
+func TestLoad_ReadsDotEnvFileFromWorkingDirectory(t *testing.T) {
+	clearEnvironment(t)
+	t.Chdir(t.TempDir())
+	require.NoError(t, os.WriteFile(".env", []byte("APP_NAME=from-dotenv\n"), 0o600))
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "from-dotenv", cfg.App.Name)
+}
+
+func TestLoad_EnvironmentWinsOverDotEnvFile(t *testing.T) {
+	clearEnvironment(t)
+	t.Setenv("APP_NAME", "from-environment")
+	t.Chdir(t.TempDir())
+	require.NoError(t, os.WriteFile(".env", []byte("APP_NAME=from-dotenv\n"), 0o600))
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "from-environment", cfg.App.Name)
+}
+
+func TestLoad_WorksWithoutDotEnvFile(t *testing.T) {
+	clearEnvironment(t)
+	t.Chdir(t.TempDir())
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "go-starter-kit", cfg.App.Name)
+}

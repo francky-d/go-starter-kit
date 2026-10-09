@@ -80,14 +80,12 @@ Every group must leave the repository green. For any group that touches Go
 code, run:
 
 ```bash
-gofmt -l .            # must print nothing
 go build ./...
-go vet ./...
-go test ./...         # or the narrower package first, then the full suite
+make lint             # gofmt check, go vet, staticcheck
+make test             # run the narrower package first if you are iterating
 ```
 
-Use the Makefile targets (`make lint`, `make test`) once they exist. Never
-commit a red build. Never use `--no-verify`.
+Never commit a red build. Never use `--no-verify`.
 
 ## Step 5 - Classify the change
 
