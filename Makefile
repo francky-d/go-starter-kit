@@ -2,6 +2,9 @@
 
 .DEFAULT_GOAL := help
 
+# Tools run with `go run` at a pinned version: nothing to install.
+AIR := github.com/air-verse/air@v1.67.4
+
 .PHONY: help
 help: ## List the available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -9,6 +12,10 @@ help: ## List the available commands
 .PHONY: run
 run: ## Run the API (reads .env when present)
 	go run ./cmd/api
+
+.PHONY: dev
+dev: ## Run the API with live reload: rebuild and restart on every change
+	go run $(AIR)
 
 .PHONY: build
 build: ## Compile the API and the migrate command into bin/

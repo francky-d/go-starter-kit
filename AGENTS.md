@@ -35,6 +35,7 @@ without `Authenticated`: a wiring bug, not a client error).
 | Tests | `testing`, `github.com/stretchr/testify`, a real PostgreSQL database |
 | Linting | `gofmt`, `go vet`, `staticcheck` |
 | Container | Multi-stage `Dockerfile`, distroless runtime image |
+| Live reload | Air, pinned in the `Makefile` and run with `go run` |
 | Continuous integration | GitHub Actions: build, lint, tests with the race detector, Docker image build |
 
 Do not add, remove or upgrade a dependency without the user's approval.
@@ -74,6 +75,7 @@ Run `make` to list every command.
 | Command | Effect |
 | --- | --- |
 | `make run` | Run the API. |
+| `make dev` | Run the API with live reload: rebuild and restart on every Go or SQL change. |
 | `make build` | Compile the API and the migrate command into `bin/`. |
 | `make docker-up` | Start PostgreSQL and wait until it is ready. |
 | `make docker-full` | Build the API image and start it with PostgreSQL. Needs `JWT_SECRET`. |

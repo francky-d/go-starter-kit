@@ -53,6 +53,28 @@ The API refuses to start if the database is unreachable within
 Logs are written to standard output. Stop the server with `Ctrl+C`: it
 finishes the requests in flight before exiting.
 
+## Live reload
+
+```bash
+make dev
+```
+
+`make dev` runs the API with [Air](https://github.com/air-verse/air): it
+rebuilds and restarts the server whenever a `.go` or `.sql` file or the
+`.env` file changes. Test files, `docs/` and `tmp/` are not watched. Before
+each restart the server receives an interrupt, so requests in flight
+finish as on a real shutdown.
+
+While the code does not compile, the server is stopped; the next
+successful build starts it again.
+
+- A new migration is embedded at the next rebuild, but applied only by
+  `make migrate-up`, or at startup with `DB_AUTO_MIGRATE=true`.
+- The binary and the build errors go to `tmp/`, which git ignores; Air
+  deletes the folder when it stops.
+- Air is pinned in the `Makefile` and runs through `go run`: nothing to
+  install. The first run downloads it.
+
 ## Commands
 
 Run `make` to list every command.
@@ -60,6 +82,7 @@ Run `make` to list every command.
 | Command | Effect |
 | --- | --- |
 | `make run` | Run the API with `go run`. |
+| `make dev` | Run the API with live reload: rebuild and restart on every Go or SQL change. |
 | `make build` | Compile the API and the migrate command into `bin/`. |
 | `make docker-up` | Start PostgreSQL and wait until it is ready. |
 | `make docker-full` | Build the API image and start it with PostgreSQL. Needs `JWT_SECRET`. |

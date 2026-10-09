@@ -78,7 +78,7 @@ task ships as exactly one atomic commit.
 | --- | --- | --- | --- |
 | 23 | Multi-stage Dockerfile and API service in Compose | `build: add multi-stage Dockerfile and api service in compose` | done |
 | 24 | GitHub Actions workflow | `ci: add GitHub Actions workflow` | done |
-| 25 | Live reload configuration | `chore: add air live reload configuration` | todo |
+| 25 | Live reload configuration | `chore: add air live reload configuration` | done |
 
 ## Phase 9 - Documentation
 

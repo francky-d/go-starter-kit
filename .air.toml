@@ -1,0 +1,24 @@
+# Live reload for local development: `make dev` rebuilds and restarts the
+# API whenever a Go file, a migration or the .env file changes.
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/api ./cmd/api"
+  entrypoint = ["./tmp/api"]
+  include_ext = ["go", "sql"]
+  include_file = [".env"]
+  exclude_dir = [".git", ".claude", ".github", "bin", "docs", "review", "tmp"]
+  exclude_regex = ["_test\\.go$"]
+  # Build errors are written to tmp/, which git ignores.
+  log = "build-errors.log"
+  delay = 500
+  stop_on_error = true
+  # Let the API finish its requests in flight, as on a real shutdown. The
+  # delay is above any sensible HTTP_SHUTDOWN_TIMEOUT; Air waits only as
+  # long as the process takes to exit.
+  send_interrupt = true
+  kill_delay = "30s"
+
+[misc]
+  clean_on_exit = true
