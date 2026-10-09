@@ -24,7 +24,7 @@ var knownVariables = []string{
 	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
 	"DB_AUTO_MIGRATE",
-	"BCRYPT_COST", "JWT_SECRET", "JWT_ISSUER", "ACCESS_TOKEN_LIFETIME",
+	"BCRYPT_COST", "JWT_SECRET", "JWT_ISSUER", "ACCESS_TOKEN_LIFETIME", "REFRESH_TOKEN_LIFETIME",
 }
 
 const (
@@ -76,6 +76,7 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, jwtSecret, cfg.Auth.JWTSecret)
 	assert.Equal(t, "go-starter-kit", cfg.Auth.JWTIssuer)
 	assert.Equal(t, 15*time.Minute, cfg.Auth.AccessTokenLifetime)
+	assert.Equal(t, 30*24*time.Hour, cfg.Auth.RefreshTokenLifetime)
 }
 
 func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
@@ -150,6 +151,7 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"missing JWT secret", "JWT_SECRET", "", "JWT_SECRET"},
 		{"blank JWT issuer", "JWT_ISSUER", " ", "JWT_ISSUER"},
 		{"zero access token lifetime", "ACCESS_TOKEN_LIFETIME", "0s", "ACCESS_TOKEN_LIFETIME"},
+		{"refresh token outlived by access token", "REFRESH_TOKEN_LIFETIME", "10m", "REFRESH_TOKEN_LIFETIME"},
 	}
 
 	for _, tc := range cases {

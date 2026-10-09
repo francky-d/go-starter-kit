@@ -1,7 +1,7 @@
 # Authentication
 
 This page describes how the kit protects user credentials and how it
-issues and checks access tokens.
+issues and checks access tokens and refresh tokens.
 
 ## Passwords
 
@@ -60,3 +60,19 @@ that both issues and checks its tokens. As soon as another service must
 verify them, sharing the secret would let that service forge tokens too:
 switch to an asymmetric algorithm such as `EdDSA` or `RS256`, keep the
 private key in this API and publish only the public key.
+
+## Refresh tokens
+
+A refresh token lets a client obtain a new access token without sending
+the password again. It is an opaque string, not a JWT: 32 random bytes
+encoded as 43 URL-safe base64 characters.
+
+- **Storage:** only the SHA-256 hash of the token is stored, in the
+  `refresh_tokens` table. A copy of the table gives no usable token. A
+  plain hash is enough here, unlike passwords: 256 random bits cannot be
+  guessed from their hash.
+- **Lifetime:** `REFRESH_TOKEN_LIFETIME` (30 days by default).
+- **Revocation:** a refresh token can be revoked at any time. A revoked
+  token is kept, so that presenting it again can be detected.
+- **Secret rotation:** refresh tokens do not depend on `JWT_SECRET`, so
+  changing the secret does not revoke them.

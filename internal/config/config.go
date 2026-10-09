@@ -73,10 +73,11 @@ type Database struct {
 }
 
 type Auth struct {
-	BcryptCost          int           `env:"BCRYPT_COST" envDefault:"12"`
-	JWTSecret           string        `env:"JWT_SECRET"`
-	JWTIssuer           string        `env:"JWT_ISSUER" envDefault:"go-starter-kit"`
-	AccessTokenLifetime time.Duration `env:"ACCESS_TOKEN_LIFETIME" envDefault:"15m"`
+	BcryptCost           int           `env:"BCRYPT_COST" envDefault:"12"`
+	JWTSecret            string        `env:"JWT_SECRET"`
+	JWTIssuer            string        `env:"JWT_ISSUER" envDefault:"go-starter-kit"`
+	AccessTokenLifetime  time.Duration `env:"ACCESS_TOKEN_LIFETIME" envDefault:"15m"`
+	RefreshTokenLifetime time.Duration `env:"REFRESH_TOKEN_LIFETIME" envDefault:"720h"`
 }
 
 // MinJWTSecretBytes matches the HS256 key size: a shorter secret weakens the
@@ -203,5 +204,6 @@ func (a Auth) validate() error {
 		mustBeLongSecret("JWT_SECRET", a.JWTSecret, MinJWTSecretBytes),
 		mustNotBeBlank("JWT_ISSUER", a.JWTIssuer),
 		mustBePositive("ACCESS_TOKEN_LIFETIME", a.AccessTokenLifetime),
+		mustExceed("REFRESH_TOKEN_LIFETIME", a.RefreshTokenLifetime, "ACCESS_TOKEN_LIFETIME", a.AccessTokenLifetime),
 	)
 }
