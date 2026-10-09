@@ -45,6 +45,7 @@ create a new top-level folder without the user's approval.
 | `cmd/api/` | The `main` package: load config, build the app, run it. |
 | `internal/app/` | Application bootstrap and dependency wiring. |
 | `internal/config/` | Typed configuration loaded from the environment. |
+| `internal/logging/` | The `slog` logger factory. |
 | `internal/apperror/` | Application errors carrying an HTTP status; used by services and middleware. |
 | `internal/http/` | Controllers, middleware, requests, resources, `respond` (response helpers), and the fluent router wrapper over Echo. |
 | `internal/routes/` | The list of routes, registered through the router wrapper. |
