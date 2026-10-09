@@ -8,4 +8,4 @@ the source of truth and the documentation must be fixed in the same change.
 
 | Document | Purpose |
 | --- | --- |
-| *(none yet)* | Documents are added as the features they describe are built. |
+| [conventions.md](conventions.md) | How the code is organised, named and tested. |

@@ -31,6 +31,7 @@ through every call that does I/O, and nothing panics on a request path.
 | Passwords | `golang.org/x/crypto/bcrypt` |
 | Logging | `log/slog` |
 | Tests | `testing`, `github.com/stretchr/testify`, a real PostgreSQL database |
+| Linting | `gofmt`, `go vet`, `staticcheck` |
 
 Do not add, remove or upgrade a dependency without the user's approval.
 
@@ -44,12 +45,14 @@ create a new top-level folder without the user's approval.
 | `cmd/api/` | The `main` package: load config, build the app, run it. |
 | `internal/app/` | Application bootstrap and dependency wiring. |
 | `internal/config/` | Typed configuration loaded from the environment. |
-| `internal/http/` | Controllers, middleware, requests, resources, responses, and the fluent router wrapper over Echo. |
+| `internal/apperror/` | Application errors carrying an HTTP status; used by services and middleware. |
+| `internal/http/` | Controllers, middleware, requests, resources, `respond` (response helpers), and the fluent router wrapper over Echo. |
 | `internal/routes/` | The list of routes, registered through the router wrapper. |
 | `internal/models/` | GORM models. |
 | `internal/repositories/` | Database access, one repository per aggregate. |
 | `internal/services/` | Business logic, independent of HTTP. |
 | `internal/auth/` | Password hashing and token handling. |
+| `internal/testutil/` | Test helpers: test database, test application, HTTP requests. |
 | `database/migrations/` | Versioned SQL migrations. |
 | `docs/` | Documentation of the current state of the kit. |
 | `.claude/skills/` | Skills for Claude Code; also readable as convention guides. |
