@@ -1,199 +1,211 @@
-# Authentication
+# Authentification
 
-This page describes how the kit protects user credentials, how it issues
-and checks access tokens and refresh tokens, and how sessions start, renew
-and end.
+Cette page décrit comment le kit protège les identifiants des utilisateurs,
+comment il délivre et vérifie les jetons d'accès et les jetons de
+rafraîchissement, et comment les sessions démarrent, se renouvellent et
+se terminent.
 
-## Passwords
+## Mots de passe
 
-Passwords are hashed with bcrypt before they are stored; the plain
-password is never stored or logged.
+Les mots de passe sont hachés avec bcrypt avant d'être stockés ; le mot de
+passe en clair n'est jamais stocké ni journalisé.
 
-- **Work factor:** `BCRYPT_COST` (default `12`). Each step doubles the
-  time to hash and to verify, which slows down an attacker who obtains the
-  hashes. See [configuration.md](configuration.md#authentication). After a
-  change, each existing hash is replaced at the next successful login of
-  its user.
-- **Salt:** every hash has its own random salt, so two users with the same
-  password get different hashes.
-- **Length:** bcrypt only reads the first 72 bytes of a password. Longer
-  passwords are rejected rather than silently truncated: registration
-  refuses them, and login treats them as a wrong password. Characters
-  outside ASCII take several bytes, so 72 bytes can be fewer than 72
-  characters.
-- **Unknown accounts:** when a login names an email that does not exist,
-  the hasher still runs a full bcrypt comparison against a dummy hash, so
-  the response time does not reveal which emails have an account. Until
-  every hash has been upgraded after a change of `BCRYPT_COST`, old
-  hashes verify at their old cost, which a precise timing could tell
-  apart.
+- **Facteur de coût :** `BCRYPT_COST` (`12` par défaut). Chaque cran double
+  le temps de hachage et de vérification, ce qui ralentit un attaquant qui
+  obtient les hash. Voir
+  [configuration.md](configuration.md#authentification). Après un
+  changement, chaque hash existant est remplacé à la connexion réussie
+  suivante de son utilisateur.
+- **Sel :** chaque hash a son propre sel aléatoire, si bien que deux
+  utilisateurs avec le même mot de passe obtiennent des hash différents.
+- **Longueur :** bcrypt ne lit que les 72 premiers octets d'un mot de
+  passe. Les mots de passe plus longs sont rejetés plutôt que tronqués en
+  silence : l'inscription les refuse, et la connexion les traite comme un
+  mauvais mot de passe. Les caractères hors ASCII prennent plusieurs
+  octets : 72 octets peuvent donc faire moins de 72 caractères.
+- **Comptes inconnus :** quand une connexion nomme un email qui n'existe
+  pas, le hacheur exécute quand même une comparaison bcrypt complète contre
+  un hash factice : le temps de réponse ne révèle pas quels emails ont un
+  compte. Tant que tous les hash n'ont pas été mis à niveau après un
+  changement de `BCRYPT_COST`, les anciens hash se vérifient à leur ancien
+  coût, ce qu'une mesure de temps précise pourrait distinguer.
 
-## Access tokens
+## Jetons d'accès
 
-An access token is a JSON Web Token signed with HMAC-SHA256 (`HS256`) and
-the `JWT_SECRET` key. It carries:
+Un jeton d'accès est un JSON Web Token signé en HMAC-SHA256 (`HS256`) avec
+la clé `JWT_SECRET`. Il porte :
 
-| Claim | Content |
+| Claim | Contenu |
 | --- | --- |
-| `sub` | The id of the user. |
+| `sub` | L'identifiant de l'utilisateur. |
 | `iss` | `JWT_ISSUER`. |
-| `iat` | When the token was issued. |
-| `exp` | When the token expires: `ACCESS_TOKEN_LIFETIME` after `iat`. |
-| `jti` | A unique id for the token. |
+| `iat` | La date d'émission du jeton. |
+| `exp` | La date d'expiration du jeton : `ACCESS_TOKEN_LIFETIME` après `iat`. |
+| `jti` | Un identifiant unique du jeton. |
 
-A token is accepted only when all of these hold:
+Un jeton n'est accepté que si toutes ces conditions sont réunies :
 
-- it is signed with `HS256` and the configured secret. Tokens signed with
-  another algorithm, including `none`, are refused before their signature
-  is checked;
-- its issuer is `JWT_ISSUER`;
-- it has an expiry, and the expiry has not passed;
-- it was not issued in the future;
-- its subject is a user id.
+- il est signé en `HS256` avec le secret configuré. Les jetons signés avec
+  un autre algorithme, `none` compris, sont refusés avant même la
+  vérification de leur signature ;
+- son émetteur est `JWT_ISSUER` ;
+- il a une date d'expiration, et elle n'est pas dépassée ;
+- il n'a pas été émis dans le futur ;
+- son sujet est un identifiant d'utilisateur.
 
-Clocks may differ by up to 30 seconds between the server that issued a
-token and the one that checks it.
+Les horloges peuvent différer de 30 secondes au plus entre le serveur qui
+a émis un jeton et celui qui le vérifie.
 
-Every refused token gives the same result, whatever the reason, so a
-client learns nothing about why its token was refused.
+Tout jeton refusé produit le même résultat, quelle que soit la raison : un
+client n'apprend rien sur le motif du refus.
 
-An access token cannot be revoked: it stays valid until it expires. Keep
-`ACCESS_TOKEN_LIFETIME` short. Changing `JWT_SECRET` invalidates every
-access token at once.
+Un jeton d'accès ne peut pas être révoqué : il reste valide jusqu'à son
+expiration. Gardez `ACCESS_TOKEN_LIFETIME` courte. Changer `JWT_SECRET`
+invalide d'un coup tous les jetons d'accès.
 
-`HS256` uses the same secret to sign and to verify, which suits an API
-that both issues and checks its tokens. As soon as another service must
-verify them, sharing the secret would let that service forge tokens too:
-switch to an asymmetric algorithm such as `EdDSA` or `RS256`, keep the
-private key in this API and publish only the public key.
+`HS256` utilise le même secret pour signer et pour vérifier, ce qui
+convient à une API qui délivre et vérifie elle-même ses jetons. Dès qu'un
+autre service doit les vérifier, partager le secret lui permettrait aussi
+d'en forger : passez à un algorithme asymétrique comme `EdDSA` ou `RS256`,
+gardez la clé privée dans cette API et ne publiez que la clé publique.
 
-## Authenticating requests
+## Authentifier les requêtes
 
-Routes behind authentication expect the access token in the
-`Authorization` header:
+Les routes protégées attendent le jeton d'accès dans l'en-tête
+`Authorization` :
 
 ```text
 Authorization: Bearer <access_token>
 ```
 
-The scheme is case-insensitive. A request is refused with `401
-Unauthenticated.` when the header is missing, uses another scheme, or
-carries a token that fails any check of [Access tokens](#access-tokens).
-A refresh token is not an access token and is refused too.
+Le schéma est insensible à la casse. Une requête est refusée avec `401
+Unauthenticated.` quand l'en-tête manque, utilise un autre schéma, ou porte
+un jeton qui échoue à l'une des vérifications des
+[jetons d'accès](#jetons-daccès). Un jeton de rafraîchissement n'est pas un
+jeton d'accès et il est refusé lui aussi.
 
-The `WWW-Authenticate` header of the refusal tells a client what to do:
+L'en-tête `WWW-Authenticate` du refus indique au client quoi faire :
 
-| Header | Meaning | What the client should do |
+| En-tête | Signification | Ce que doit faire le client |
 | --- | --- | --- |
-| `Bearer` | No bearer token was sent. | Sign in. |
-| `Bearer error="invalid_token"` | The token sent was refused. Expired and forged tokens get the same answer. | Refresh the session, then sign in if that fails. |
+| `Bearer` | Aucun jeton bearer n'a été envoyé. | Se connecter. |
+| `Bearer error="invalid_token"` | Le jeton envoyé a été refusé. Un jeton expiré et un jeton forgé reçoivent la même réponse. | Rafraîchir la session, puis se reconnecter si cela échoue. |
 
-An access token stays valid after its user is deleted, until it expires.
-Endpoints that load the current user answer `401` in that case.
+Un jeton d'accès reste valide après la suppression de son utilisateur,
+jusqu'à son expiration. Les endpoints qui chargent l'utilisateur courant
+répondent alors `401`.
 
-In a controller, `middleware.CurrentUserID(c)` returns the id of the
-authenticated user. It is only available on routes behind the
-`Authenticated` middleware; calling it elsewhere is a programming error
-and panics.
+Dans un contrôleur, `middleware.CurrentUserID(c)` renvoie l'identifiant de
+l'utilisateur authentifié. Il n'est disponible que sur les routes placées
+derrière le middleware `Authenticated` ; l'appeler ailleurs est une erreur
+de programmation et provoque un panic.
 
-## Refresh tokens
+## Jetons de rafraîchissement
 
-A refresh token lets a client obtain a new access token without sending
-the password again. It is an opaque string, not a JWT: 32 random bytes
-encoded as 43 URL-safe base64 characters.
+Un jeton de rafraîchissement permet à un client d'obtenir un nouveau jeton
+d'accès sans renvoyer le mot de passe. C'est une chaîne opaque, pas un
+JWT : 32 octets aléatoires encodés en 43 caractères base64 compatibles URL.
 
-- **Storage:** only the SHA-256 hash of the token is stored, in the
-  `refresh_tokens` table. A copy of the table gives no usable token. A
-  plain hash is enough here, unlike passwords: 256 random bits cannot be
-  guessed from their hash.
-- **Lifetime:** `REFRESH_TOKEN_LIFETIME` (30 days by default).
-- **Revocation:** a refresh token can be revoked at any time. Revoked
-  tokens are kept, so that a stolen token can be recognised when it is
-  presented again (see [Refreshing a session](#refreshing-a-session)).
-- **Secret rotation:** refresh tokens do not depend on `JWT_SECRET`, so
-  changing the secret does not revoke them.
+- **Stockage :** seul le hash SHA-256 du jeton est stocké, dans la table
+  `refresh_tokens`. Une copie de la table ne donne aucun jeton utilisable.
+  Un simple hash suffit ici, contrairement aux mots de passe : 256 bits
+  aléatoires ne se devinent pas à partir de leur hash.
+- **Durée de vie :** `REFRESH_TOKEN_LIFETIME` (30 jours par défaut).
+- **Révocation :** un jeton de rafraîchissement peut être révoqué à tout
+  moment. Les jetons révoqués sont conservés, pour reconnaître un jeton
+  volé quand il est présenté à nouveau (voir
+  [Rafraîchir une session](#rafraîchir-une-session)).
+- **Rotation du secret :** les jetons de rafraîchissement ne dépendent pas
+  de `JWT_SECRET` ; changer le secret ne les révoque donc pas.
 
 ## Sessions
 
-A session is a pair of tokens: a short-lived access token and the refresh
-token that renews it. Every user can have several sessions at once, one
-per device.
+Une session est une paire de jetons : un jeton d'accès de courte durée et
+le jeton de rafraîchissement qui le renouvelle. Chaque utilisateur peut
+avoir plusieurs sessions à la fois, une par appareil.
 
-### Registering
+### Inscription
 
-Registration creates the user and starts a session. The email is stored
-trimmed and in lowercase, so `Ada@Example.com` and `ada@example.com` are
-the same account.
+L'inscription crée l'utilisateur et démarre une session. L'email est
+stocké sans espaces autour et en minuscules : `Ada@Example.com` et
+`ada@example.com` désignent le même compte.
 
-An email that already has an account is refused with
-`Unable to register with the provided details.`. This message does reveal
-that the email is taken: hiding it would need an email verification flow,
-which the kit does not have. The rate limit on the authentication routes
-slows down an attacker who tests emails this way.
+Un email qui a déjà un compte est refusé avec
+`Unable to register with the provided details.`. Ce message révèle bien
+que l'email est pris : le masquer exigerait un parcours de vérification de
+l'email, que le kit n'a pas. La limitation de débit des routes
+d'authentification ralentit un attaquant qui teste des emails de cette
+façon.
 
-### Logging in
+### Connexion
 
-Login starts a new session. An unknown email, a wrong password and a
-password longer than 72 bytes all get the same `Invalid credentials.`
-error, after the same bcrypt work.
+La connexion démarre une nouvelle session. Un email inconnu, un mauvais
+mot de passe et un mot de passe de plus de 72 octets reçoivent tous la même
+erreur `Invalid credentials.`, après le même travail bcrypt.
 
-### Refreshing a session
+### Rafraîchir une session
 
-Exchanging a refresh token returns a new session and revokes the old
-token, which records the new token as its replacement. Each refresh token
-can therefore be used once.
+Échanger un jeton de rafraîchissement renvoie une nouvelle session et
+révoque l'ancien jeton, qui enregistre le nouveau comme son remplaçant.
+Chaque jeton de rafraîchissement ne sert donc qu'une fois.
 
-A refresh token presented after it was already exchanged means that two
-parties hold it: the client and someone who stole it. The API cannot tell
-which one is legitimate, so it revokes **every** refresh token of the
-user, and every device must sign in again. The event is logged as a
-warning with the user id.
+Un jeton présenté alors qu'il a déjà été échangé signifie que deux parties
+le détiennent : le client et quelqu'un qui l'a volé. L'API ne peut pas
+savoir laquelle est légitime : elle révoque **tous** les jetons de
+rafraîchissement de l'utilisateur, et chaque appareil doit se reconnecter.
+L'événement est journalisé en avertissement avec l'identifiant de
+l'utilisateur.
 
-The same happens when a client sends the same refresh token twice: two
-browser tabs refreshing at the same time, or a refresh whose response was
-lost in the network and that the client retries with the old token. Only
-one exchange can succeed; the other counts as a reuse. Clients should
-serialise their refresh calls, and sign in again when a refresh gets no
-response, instead of retrying with the same token: the retry would also
-sign out every other device.
+La même chose se produit quand un client envoie deux fois le même jeton :
+deux onglets qui rafraîchissent en même temps, ou un rafraîchissement dont
+la réponse s'est perdue sur le réseau et que le client rejoue avec l'ancien
+jeton. Un seul échange peut réussir ; l'autre compte comme une
+réutilisation. Les clients devraient sérialiser leurs appels de
+rafraîchissement, et se reconnecter quand un rafraîchissement reste sans
+réponse, plutôt que de réessayer avec le même jeton : la nouvelle tentative
+déconnecterait aussi tous les autres appareils.
 
-An expired token, a token revoked by a logout and an unknown token are
-refused without revoking anything else.
+Un jeton expiré, un jeton révoqué par une déconnexion et un jeton inconnu
+sont refusés sans rien révoquer d'autre.
 
-### Logging out
+### Déconnexion
 
-Logout revokes the refresh token it receives; the other sessions of the
-user stay open. Holding the refresh token is enough: no access token is
-needed, so a client can sign out after its access token has expired. An
-unknown or already revoked token is accepted silently, so logging out
-twice is not an error.
+La déconnexion révoque le jeton de rafraîchissement qu'elle reçoit ; les
+autres sessions de l'utilisateur restent ouvertes. Détenir le jeton de
+rafraîchissement suffit : aucun jeton d'accès n'est demandé, si bien qu'un
+client peut se déconnecter après l'expiration de son jeton d'accès. Un
+jeton inconnu ou déjà révoqué est accepté sans erreur : se déconnecter deux
+fois n'est pas une erreur.
 
-The access token of the session stays valid until it expires, at most
-`ACCESS_TOKEN_LIFETIME`. Clients should delete both tokens when they log
-out.
+Le jeton d'accès de la session reste valide jusqu'à son expiration, au plus
+`ACCESS_TOKEN_LIFETIME`. Les clients doivent supprimer les deux jetons à la
+déconnexion.
 
-## Rate limiting
+## Limitation de débit
 
-The authentication routes are limited per client IP, with two separate
-budgets:
+Les routes d'authentification sont limitées par IP client, avec deux
+budgets distincts :
 
-| Routes | Variable | Default | Why |
+| Routes | Variable | Défaut | Pourquoi |
 | --- | --- | --- | --- |
-| register, login | `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | They take credentials: a tight limit slows down password guessing and email enumeration. |
-| refresh, logout | `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Clients call them in the normal course of a session; a refresh token cannot be guessed, so the limit only protects the database. |
+| register, login | `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | Elles reçoivent des identifiants : une limite serrée ralentit la recherche de mots de passe et l'énumération des emails. |
+| refresh, logout | `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Les clients les appellent au fil normal d'une session ; un jeton de rafraîchissement ne se devine pas, la limite ne protège donc que la base. |
 
-Each limit allows bursts of its own size. Beyond it, a route answers `429`
-with `Retry-After: 60`. Separate budgets mean that routine refreshes never
-prevent a login, and a client that reached the login limit can still log
-out.
+Chaque limite autorise des rafales de sa propre taille. Au-delà, une route
+répond `429` avec `Retry-After: 60`. Avec des budgets séparés, les
+rafraîchissements de routine n'empêchent jamais une connexion, et un
+client qui a atteint la limite de connexion peut encore se déconnecter.
 
-- The counters live in the memory of each instance. With several
-  instances, a client can make the limit once per instance; put a shared
-  limit in the load balancer or the API gateway if that matters.
-- The client IP comes from the connection, or from `X-Forwarded-For` when
-  `HTTP_TRUST_PROXY` is enabled (see
-  [configuration.md](configuration.md#http-server)). Behind a proxy without
-  that setting, every client shares the proxy's IP and the same limit.
-- Users behind one NAT, such as an office network, share both limits.
-  Raise the refresh limit first if legitimate users hit it; raising the
-  credentials limit also helps an attacker.
+- Les compteurs vivent dans la mémoire de chaque instance. Avec plusieurs
+  instances, un client dispose de la limite une fois par instance ; placez
+  une limite partagée dans le load balancer ou l'API gateway si cela
+  compte.
+- L'IP client vient de la connexion, ou de `X-Forwarded-For` quand
+  `HTTP_TRUST_PROXY` est activée (voir
+  [configuration.md](configuration.md#serveur-http)). Derrière un proxy
+  sans ce réglage, tous les clients partagent l'IP du proxy et la même
+  limite.
+- Les utilisateurs derrière un même NAT, comme le réseau d'un bureau,
+  partagent les deux limites. Relevez d'abord la limite de
+  rafraîchissement si des utilisateurs légitimes l'atteignent ; relever la
+  limite des identifiants aide aussi un attaquant.

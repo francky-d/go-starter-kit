@@ -1,83 +1,92 @@
-# Deployment
+# Déploiement
 
-This page describes the Docker image, how to run the whole stack in
-containers, and what to check before going to production.
+Cette page décrit l'image Docker, comment exécuter toute la pile en
+conteneurs, et ce qu'il faut vérifier avant la mise en production.
 
-## Docker image
+## Image Docker
 
-The `Dockerfile` builds in two stages:
+Le `Dockerfile` construit l'image en deux étapes :
 
-1. `golang:1.26-alpine` compiles static binaries for the API and the
-   migrate command.
-2. `gcr.io/distroless/static-debian13:nonroot` runs them. The image has no
-   shell and no package manager, and runs as an unprivileged user.
+1. `golang:1.26-alpine` compile des binaires statiques pour l'API et la
+   commande de migration.
+2. `gcr.io/distroless/static-debian13:nonroot` les exécute. L'image n'a ni
+   shell ni gestionnaire de paquets, et s'exécute avec un utilisateur non
+   privilégié.
 
 ```bash
 docker build -t go-starter-kit .
 ```
 
-| Path in the image | Content |
+| Chemin dans l'image | Contenu |
 | --- | --- |
-| `/usr/local/bin/api` | The API, the entry point of the image. It listens on `HTTP_PORT` (`8080`). |
-| `/usr/local/bin/migrate` | The migrate command, with the migrations embedded. |
+| `/usr/local/bin/api` | L'API, point d'entrée de l'image. Elle écoute sur `HTTP_PORT` (`8080`). |
+| `/usr/local/bin/migrate` | La commande de migration, avec les migrations embarquées. |
 
-The image holds no configuration: pass every variable from
-[configuration.md](configuration.md) through the environment. `.env`
-files are excluded from the build context and never copied into the image.
+L'image ne contient aucune configuration : passez chaque variable de
+[configuration.md](configuration.md) par l'environnement. Les fichiers
+`.env` sont exclus du contexte de build et jamais copiés dans l'image.
 
-## The whole stack in containers
+## Toute la pile en conteneurs
 
-`make docker-full` builds the image and starts PostgreSQL and the API
-together:
+`make docker-full` construit l'image et démarre PostgreSQL et l'API
+ensemble :
 
 ```bash
 make docker-full
 curl -s http://localhost:8080/health
 ```
 
-The API container applies the migrations at startup (`DB_AUTO_MIGRATE`)
-and reads `JWT_SECRET` from `.env` or the shell; without it, the API exits
-with a configuration error. It listens on `localhost:8080`; set
-`API_FORWARD_PORT` to use another port. `make docker-logs` follows the logs
-of both containers, and `make docker-down` stops them.
+Le conteneur de l'API applique les migrations au démarrage
+(`DB_AUTO_MIGRATE`) et lit `JWT_SECRET` dans `.env` ou le shell ; sans
+lui, l'API s'arrête avec une erreur de configuration. Elle écoute sur
+`localhost:8080` ; réglez `API_FORWARD_PORT` pour utiliser un autre port.
+`make docker-logs` suit les logs des deux conteneurs, et `make docker-down`
+les arrête.
 
-The image has no health check, so `make docker-full` returns once the API
-process has started, not once it serves requests: check `/health` as above.
+L'image n'a pas de health check : `make docker-full` rend la main dès que
+le processus de l'API a démarré, pas dès qu'il sert des requêtes. Vérifiez
+`/health` comme ci-dessus.
 
-For day-to-day development, run PostgreSQL alone with `make docker-up` and
-the API on the host with `make run`.
+Au quotidien, lancez PostgreSQL seul avec `make docker-up` et l'API sur
+l'hôte avec `make run`.
 
-## Migrations in production
+## Migrations en production
 
-Apply migrations before the new version serves traffic, in one of two
-ways:
+Appliquez les migrations avant que la nouvelle version reçoive du trafic,
+de l'une de ces deux façons :
 
-- **A one-off job** before the rollout, with the same image:
+- **Un job ponctuel** avant le déploiement, avec la même image :
 
   ```bash
   docker run --rm -e DATABASE_URL="$DATABASE_URL" \
     --entrypoint /usr/local/bin/migrate go-starter-kit up
   ```
 
-- **At startup**, with `DB_AUTO_MIGRATE=true`. A PostgreSQL advisory lock
-  makes concurrent instances apply each migration once, but every instance
-  waits for the lock while it starts.
+- **Au démarrage**, avec `DB_AUTO_MIGRATE=true`. Un verrou consultatif
+  PostgreSQL fait que des instances concurrentes appliquent chaque
+  migration une seule fois, mais chaque instance attend le verrou pendant
+  son démarrage.
 
-Write migrations that the previous version of the API can run against:
-during a rollout, old and new instances share the database.
+Écrivez des migrations avec lesquelles la version précédente de l'API
+fonctionne encore : pendant un déploiement, anciennes et nouvelles
+instances partagent la base.
 
-## Before going to production
+## Avant la mise en production
 
-- Set `APP_ENV=production`. Every log record carries it.
-- Generate a `JWT_SECRET` for this environment only (`openssl rand -hex 32`)
-  and keep it in a secret manager, never in the image or the repository.
-- Use `sslmode=require` or stricter in `DATABASE_URL`.
-- Keep `LOG_FORMAT=json` for log collectors.
-- Terminate TLS in front of the API. Enable `HTTP_TRUST_PROXY` only when a
-  proxy you control sets `X-Forwarded-For`.
-- Set `CORS_ALLOWED_ORIGINS` to the exact origins of your web clients.
-- Use `/health` as the readiness probe, not as the liveness probe: see
+- Réglez `APP_ENV=production`. Chaque enregistrement de log le porte.
+- Générez un `JWT_SECRET` propre à cet environnement
+  (`openssl rand -hex 32`) et gardez-le dans un gestionnaire de secrets,
+  jamais dans l'image ni dans le dépôt.
+- Utilisez `sslmode=require` ou plus strict dans `DATABASE_URL`.
+- Gardez `LOG_FORMAT=json` pour les collecteurs de logs.
+- Terminez le TLS devant l'API. N'activez `HTTP_TRUST_PROXY` que si un
+  proxy que vous contrôlez renseigne `X-Forwarded-For`.
+- Réglez `CORS_ALLOWED_ORIGINS` sur les origines exactes de vos clients
+  web.
+- Utilisez `/health` comme sonde de disponibilité (readiness), pas comme
+  sonde de vivacité (liveness) : voir
   [api-reference.md](api-reference.md#get-health).
-- With several instances, the authentication rate limits count per
-  instance; add a shared limit in the load balancer or gateway if needed.
-- Keep `BCRYPT_COST` at 12 or more.
+- Avec plusieurs instances, les limites de débit de l'authentification
+  comptent par instance ; ajoutez une limite partagée dans le load
+  balancer ou la gateway si besoin.
+- Gardez `BCRYPT_COST` à 12 ou plus.

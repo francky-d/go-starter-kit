@@ -1,95 +1,102 @@
-# Testing
+# Tests
 
-Every change is covered by a test. Tests use the standard `testing`
-package with [testify](https://github.com/stretchr/testify), and run
-against a real PostgreSQL database: the database is never mocked.
+Chaque changement est couvert par un test. Les tests utilisent le package
+standard `testing` avec [testify](https://github.com/stretchr/testify), et
+s'exécutent contre une vraie base PostgreSQL : la base n'est jamais
+simulée.
 
-## Running the tests
+## Lancer les tests
 
 ```bash
-make docker-up     # once: start PostgreSQL
-make test          # the whole suite
-make test-cover    # the whole suite, with coverage
-go test ./internal/repositories/...   # one package while iterating
+make docker-up     # une fois : démarre PostgreSQL
+make test          # toute la suite
+make test-cover    # toute la suite, avec couverture
+go test ./internal/repositories/...   # un seul package pendant le développement
 ```
 
-`make test` runs `go test -p 1 ./...`. Every package shares the same test
-database, so packages run one at a time; tests inside a package still run
-in order.
+`make test` lance `go test -p 1 ./...`. Tous les packages partagent la même
+base de test : les packages s'exécutent donc un par un ; les tests d'un
+même package s'exécutent toujours dans l'ordre.
 
-Tests connect to `app_test` on `localhost:5432`. Set `TEST_DATABASE_URL` to
-use another database (see [database.md](database.md#test-database)).
+Les tests se connectent à `app_test` sur `localhost:5432`. Réglez
+`TEST_DATABASE_URL` pour utiliser une autre base (voir
+[database.md](database.md#base-de-test)).
 
-## Coverage
+## Couverture
 
-`make test-cover` runs the suite with coverage of every package under
-`internal/`, including code reached from another package's tests: the
-end-to-end tests count for the controllers and services they go through.
-It prints the total and writes two files, both ignored by git:
+`make test-cover` lance la suite avec la couverture de chaque package sous
+`internal/`, y compris le code atteint depuis les tests d'un autre
+package : les tests de bout en bout comptent pour les contrôleurs et les
+services qu'ils traversent. Il affiche le total et écrit deux fichiers,
+tous deux ignorés par git :
 
-| File | Content |
+| Fichier | Contenu |
 | --- | --- |
-| `coverage.out` | The raw profile, for `go tool cover`. |
-| `coverage.html` | A page that colours every line by coverage. |
+| `coverage.out` | Le profil brut, pour `go tool cover`. |
+| `coverage.html` | Une page qui colore chaque ligne selon sa couverture. |
 
-Read the `total:` line and the HTML page. While the tests run, a package
-without test files prints `coverage: 0.0% of statements` even when other
-packages' tests cover it; the profile counts that coverage.
+Lisez la ligne `total:` et la page HTML. Pendant l'exécution, un package
+sans fichier de test affiche `coverage: 0.0% of statements` même quand les
+tests d'autres packages le couvrent ; le profil compte bien cette
+couverture.
 
-## End-to-end tests
+## Tests de bout en bout
 
-`internal/app/auth_flow_test.go` drives the API the way a client
-application does: register, read the current user, refresh, log out,
-log in again, then present an exchanged refresh token and check that
-every session is revoked. It covers how the endpoints work together,
-which the tests of each endpoint do not.
+`internal/app/auth_flow_test.go` pilote l'API comme le ferait une
+application cliente : inscription, lecture de l'utilisateur courant,
+rafraîchissement, déconnexion, nouvelle connexion, puis présentation d'un
+jeton de rafraîchissement déjà échangé pour vérifier que toutes les
+sessions sont révoquées. Il couvre la façon dont les endpoints
+fonctionnent ensemble, ce que ne font pas les tests de chaque endpoint.
 
-## Continuous integration
+## Intégration continue
 
-`.github/workflows/ci.yml` checks every push to `main` and every pull
-request with two jobs.
+`.github/workflows/ci.yml` vérifie chaque push sur `main` et chaque pull
+request avec deux jobs.
 
-**Lint and test** runs the same commands as a local run, with the latest
-Go 1.26 patch:
+**Lint and test** lance les mêmes commandes qu'une exécution locale, avec
+la dernière version corrective de Go 1.26 :
 
 1. `go build ./...`
 2. `make lint`
-3. `go test -race -p 1 ./...`, against a PostgreSQL 17 service container
-   reached through `TEST_DATABASE_URL`. The race detector also checks the
-   concurrent tests, such as two refreshes of the same token.
+3. `go test -race -p 1 ./...`, contre un conteneur de service
+   PostgreSQL 17 joint via `TEST_DATABASE_URL`. Le détecteur de courses
+   vérifie aussi les tests concurrents, comme deux rafraîchissements du
+   même jeton.
 
-**Docker image** builds the `Dockerfile`, so a change that breaks the
-image fails like a failing test.
+**Docker image** construit le `Dockerfile` : un changement qui casse
+l'image échoue comme un test.
 
-A newer push to a pull request cancels its run still in progress; runs on
-`main` always complete. A commit whose message contains `[skip ci]` is not
-checked: the commit skill adds it only when every changed file is
-Markdown. If a branch protection rule requires the CI checks, a pull
-request whose last commit skipped CI cannot be merged until a new commit
-runs them.
+Un nouveau push sur une pull request annule l'exécution encore en cours ;
+les exécutions sur `main` vont toujours à leur terme. Un commit dont le
+message contient `[skip ci]` n'est pas vérifié : le skill de commit ne
+l'ajoute que quand tous les fichiers modifiés sont en Markdown. Si une
+règle de protection de branche exige les vérifications de la CI, une pull
+request dont le dernier commit a sauté la CI ne peut pas être fusionnée
+tant qu'un nouveau commit ne les a pas lancées.
 
 ## Helpers
 
-The `internal/testutil` package provides:
+Le package `internal/testutil` fournit :
 
-| Helper | Gives |
+| Helper | Fournit |
 | --- | --- |
-| `testutil.DB(t)` | A connection to the migrated test database. Every table is emptied before the test and when it ends. |
-| `testutil.Truncate(t, db)` | Empties every table except the migration history. |
-| `testutil.Config()` | A complete, valid configuration for tests, pointing at the test database. |
-| `testutil.DatabaseConfig()` | The database part of that configuration. |
-| `testutil.DatabaseURL()` | `TEST_DATABASE_URL`, or the local test database. |
-| `testutil.NewClient(t, handler)` | A client that sends JSON requests to a handler in memory: `Get`, `Post`, and `WithToken` for a bearer token. |
+| `testutil.DB(t)` | Une connexion à la base de test migrée. Chaque table est vidée avant le test et à sa fin. |
+| `testutil.Truncate(t, db)` | Vide chaque table sauf l'historique des migrations. |
+| `testutil.Config()` | Une configuration complète et valide pour les tests, pointant vers la base de test. |
+| `testutil.DatabaseConfig()` | La partie base de données de cette configuration. |
+| `testutil.DatabaseURL()` | `TEST_DATABASE_URL`, ou la base de test locale. |
+| `testutil.NewClient(t, handler)` | Un client qui envoie des requêtes JSON à un handler en mémoire : `Get`, `Post`, et `WithToken` pour un jeton bearer. |
 
-A response from the client is an `httptest.ResponseRecorder` with two
-decoders: `Data(&target)` reads the `data` member of a success response,
-and `ErrorBody()` returns the `message` and `errors` of an error
-response.
+Une réponse du client est un `httptest.ResponseRecorder` avec deux
+décodeurs : `Data(&target)` lit le membre `data` d'une réponse de succès,
+et `ErrorBody()` renvoie le `message` et les `errors` d'une réponse
+d'erreur.
 
-Migrations are applied once per test binary, the first time `testutil.DB`
-is called.
+Les migrations sont appliquées une fois par binaire de test, au premier
+appel de `testutil.DB`.
 
-## Writing a test
+## Écrire un test
 
 ```go
 func TestUserRepository_ReportsATakenEmailAsDuplicate(t *testing.T) {
@@ -102,10 +109,10 @@ func TestUserRepository_ReportsATakenEmailAsDuplicate(t *testing.T) {
 }
 ```
 
-### Testing an endpoint
+### Tester un endpoint
 
-Endpoint tests go through the real application, with every middleware,
-on the test database:
+Les tests d'endpoint passent par la vraie application, avec chaque
+middleware, sur la base de test :
 
 ```go
 func newClient(t *testing.T) *testutil.Client {
@@ -130,13 +137,15 @@ func TestLogin_AnswersTheSameForAnUnknownEmailAndAWrongPassword(t *testing.T) {
 }
 ```
 
-The test configuration sets very high authentication rate limits, so
-only a test that lowers one reaches it.
+La configuration de test fixe des limites de débit très hautes pour
+l'authentification : seul un test qui en abaisse une l'atteint.
 
-### Rules
+### Règles
 
-- Name the test after what it proves: `Test<Subject>_<Behaviour>`.
-- Use `require` for preconditions and `assert` for the checks.
-- Put the test file next to the code, in the `_test` package, so the test
-  only uses the exported API.
-- Use `t.Context()` for contexts; it is cancelled when the test ends.
+- Nommez le test d'après ce qu'il prouve : `Test<Subject>_<Behaviour>`.
+- Utilisez `require` pour les préconditions et `assert` pour les
+  vérifications.
+- Placez le fichier de test à côté du code, dans le package `_test`, pour
+  que le test n'utilise que l'API exportée.
+- Utilisez `t.Context()` pour les contextes ; il est annulé à la fin du
+  test.

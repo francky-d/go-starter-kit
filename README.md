@@ -1,10 +1,11 @@
 # Go Starter Kit
 
-A starter kit for REST APIs in Go, built on Echo, GORM and PostgreSQL. It
-ships a complete user authentication module, a test suite that runs
-against a real database, and instructions and skills for AI coding agents.
+Un kit de démarrage pour construire des API REST en Go, sur Echo, GORM et
+PostgreSQL. Il fournit un module complet d'authentification des
+utilisateurs, une suite de tests exécutée contre une vraie base de données,
+ainsi que des instructions et des skills pour les agents de code IA.
 
-The code is written to read like plain English:
+Le code se lit comme de l'anglais courant :
 
 ```go
 api := r.Group("/api/v1")
@@ -35,34 +36,37 @@ func (ac *AuthController) Login(c echo.Context) error {
 }
 ```
 
-## Features
+## Fonctionnalités
 
-- **HTTP:** Echo v4 behind a fluent router; one JSON envelope for every
-  success and every error; request validation with field-level messages;
-  request id, structured access logs, panic recovery, security headers,
-  CORS, body size limit and request timeout on every request.
-- **Authentication:** register, login, refresh, logout and current user.
-  Short-lived JWT access tokens; opaque refresh tokens stored as hashes,
-  rotated on every use, with reuse detection that revokes every session.
-  bcrypt passwords, identical answers for unknown emails and wrong
-  passwords, and per-IP rate limits.
-- **Database:** PostgreSQL 17 through GORM, UUID v7 ids, versioned SQL
-  migrations embedded in the binaries, and a migrate command.
-- **Errors that disclose nothing:** clients get generic messages; causes go
-  to the logs.
-- **Configuration:** typed, validated at startup, from the environment or
-  a `.env` file.
-- **Tests:** unit, repository, endpoint and end-to-end tests against a real
-  PostgreSQL database; coverage report.
-- **Tooling:** Makefile, Docker Compose, a 28 MB distroless image, live
-  reload, `staticcheck`, GitHub Actions CI.
-- **Agent-ready:** `AGENTS.md`, `CLAUDE.md` and skills that teach an AI
-  agent the conventions, how to add a resource, review the code, keep the
-  docs current and commit.
+- **HTTP :** Echo v4 derrière un routeur fluide ; une seule enveloppe JSON
+  pour chaque succès et chaque erreur ; validation des requêtes avec des
+  messages par champ ; identifiant de requête, logs d'accès structurés,
+  récupération des panics, en-têtes de sécurité, CORS, taille maximale du
+  corps et délai maximal sur chaque requête.
+- **Authentification :** inscription, connexion, rafraîchissement,
+  déconnexion et utilisateur courant. Jetons d'accès JWT de courte durée ;
+  jetons de rafraîchissement opaques stockés sous forme de hash, renouvelés
+  à chaque usage, avec une détection de réutilisation qui révoque toutes
+  les sessions. Mots de passe bcrypt, réponses identiques pour un email
+  inconnu et un mauvais mot de passe, et limitation de débit par IP.
+- **Base de données :** PostgreSQL 17 via GORM, identifiants UUID v7,
+  migrations SQL versionnées embarquées dans les binaires, et une commande
+  de migration.
+- **Des erreurs qui ne divulguent rien :** les clients reçoivent des
+  messages génériques ; les causes partent dans les logs.
+- **Configuration :** typée, validée au démarrage, lue depuis
+  l'environnement ou un fichier `.env`.
+- **Tests :** tests unitaires, de repository, d'endpoint et de bout en bout
+  contre une vraie base PostgreSQL ; rapport de couverture.
+- **Outillage :** Makefile, Docker Compose, une image distroless de 28 Mo,
+  rechargement à chaud, `staticcheck`, CI GitHub Actions.
+- **Prêt pour les agents :** `AGENTS.md`, `CLAUDE.md` et des skills qui
+  apprennent à un agent IA les conventions, l'ajout d'une ressource, la
+  revue du code, la mise à jour de la documentation et les commits.
 
-## Quick start
+## Démarrage rapide
 
-Requirements: Go 1.26 or later, Docker with Compose v2, `make`.
+Prérequis : Go 1.26 ou plus récent, Docker avec Compose v2, `make`.
 
 ```bash
 git clone https://github.com/francky-d/go-starter-kit.git
@@ -70,12 +74,13 @@ cd go-starter-kit
 cp .env.example .env
 ```
 
-Set `JWT_SECRET` in `.env` to the output of `openssl rand -hex 32`, then:
+Renseignez `JWT_SECRET` dans `.env` avec la sortie de
+`openssl rand -hex 32`, puis :
 
 ```bash
-make docker-up      # start PostgreSQL
-make migrate-up     # create the schema
-make run            # start the API on :8080
+make docker-up      # démarre PostgreSQL
+make migrate-up     # crée le schéma
+make run            # démarre l'API sur :8080
 ```
 
 ```bash
@@ -84,74 +89,78 @@ curl -s http://localhost:8080/api/v1/auth/register \
   -d '{"name":"Ada Lovelace","email":"ada@example.com","password":"correct horse battery staple"}'
 ```
 
-Run `make` to list every command, and `make test` to run the test suite.
+`make` liste toutes les commandes, et `make test` lance la suite de tests.
 
-## Project layout
+## Organisation du projet
 
 ```text
 cmd/
-  api/                 the API entry point
-  migrate/             the migration command
+  api/                 point d'entrée de l'API
+  migrate/             commande de migration
 internal/
-  app/                 dependency wiring and the HTTP server
-  config/              typed configuration
-  http/                controllers, middleware, requests, resources, respond, router
-  routes/              every route, in one file
-  services/            business rules
-  repositories/        queries, one repository per model
-  models/              GORM models
-  auth/                password hashing, access and refresh tokens
-  database/            connection pool and migration runner
-  apperror/            errors carrying an HTTP status and a safe message
-  logging/             slog logger
-  testutil/            test helpers
+  app/                 câblage des dépendances et serveur HTTP
+  config/              configuration typée
+  http/                contrôleurs, middleware, requests, resources, respond, router
+  routes/              toutes les routes, dans un seul fichier
+  services/            règles métier
+  repositories/        requêtes, un repository par modèle
+  models/              modèles GORM
+  auth/                hash des mots de passe, jetons d'accès et de rafraîchissement
+  database/            pool de connexions et exécution des migrations
+  apperror/            erreurs portant un statut HTTP et un message sûr
+  logging/             logger slog
+  testutil/            helpers de test
 database/
-  migrations/          SQL migrations, embedded in the binaries
-  init/                creates the test database in the local PostgreSQL container
+  migrations/          migrations SQL, embarquées dans les binaires
+  init/                crée la base de test dans le conteneur PostgreSQL local
 docs/                  documentation
-.claude/skills/        skills for AI agents
+.claude/skills/        skills pour les agents IA
 .github/workflows/     CI
 ```
 
 ## Documentation
 
-| Document | Covers |
+| Document | Contenu |
 | --- | --- |
-| [Getting started](docs/getting-started.md) | Setup, everyday commands, live reload. |
-| [Architecture](docs/architecture.md) | Packages, startup and shutdown, request lifecycle, routes. |
-| [API reference](docs/api-reference.md) | Envelopes, errors, status codes, every endpoint. |
-| [Authentication](docs/authentication.md) | Passwords, tokens, sessions, rate limiting. |
-| [Configuration](docs/configuration.md) | Every environment variable. |
-| [Database](docs/database.md) | Local PostgreSQL, migrations, schema. |
-| [Testing](docs/testing.md) | Running and writing tests, coverage, CI. |
-| [Conventions](docs/conventions.md) | How the code is organised and written. |
-| [Deployment](docs/deployment.md) | Docker image, migrations in production, checklist. |
+| [Prise en main](docs/getting-started.md) | Installation, commandes courantes, rechargement à chaud. |
+| [Architecture](docs/architecture.md) | Packages, démarrage et arrêt, cycle de vie d'une requête, routes. |
+| [Référence de l'API](docs/api-reference.md) | Enveloppes, erreurs, codes de statut, chaque endpoint. |
+| [Authentification](docs/authentication.md) | Mots de passe, jetons, sessions, limitation de débit. |
+| [Configuration](docs/configuration.md) | Chaque variable d'environnement. |
+| [Base de données](docs/database.md) | PostgreSQL en local, migrations, schéma. |
+| [Tests](docs/testing.md) | Lancer et écrire les tests, couverture, CI. |
+| [Conventions](docs/conventions.md) | Organisation et écriture du code. |
+| [Déploiement](docs/deployment.md) | Image Docker, migrations en production, check-list. |
 
-## Working with AI agents
+## Travailler avec des agents IA
 
-[AGENTS.md](AGENTS.md) holds the rules every agent follows: the stack, the
-layout, the commands, the git workflow, and a demand for honest,
-argued critique instead of agreement by default. [CLAUDE.md](CLAUDE.md)
-imports it and tells Claude Code when to use each skill:
+[AGENTS.md](AGENTS.md) contient les règles que suit chaque agent : la
+stack, l'organisation, les commandes, le workflow git, et l'exigence d'une
+critique franche et argumentée plutôt qu'un accord par défaut.
+[CLAUDE.md](CLAUDE.md) l'importe et indique à Claude Code quand utiliser
+chaque skill :
 
-| Skill | Use |
+| Skill | Usage |
 | --- | --- |
-| `conventions` | Before writing any Go code, migration or test. |
-| `scaffold` | Adding a resource, from the migration to the routes, tests and docs. |
-| `review` | A prioritised security and quality review in `review/code-review.md`. |
-| `docs` | Before every commit: decides which docs the change affects. |
-| `commit` | Atomic Conventional Commits, after the checks and the docs. |
+| `conventions` | Avant d'écrire du code Go, une migration ou un test. |
+| `scaffold` | Ajouter une ressource, de la migration jusqu'aux routes, aux tests et à la documentation. |
+| `review` | Une revue de sécurité et de qualité, priorisée, dans `review/code-review.md`. |
+| `docs` | Avant chaque commit : détermine quels documents le changement touche. |
+| `commit` | Des commits atomiques au format Conventional Commits, après les vérifications et la documentation. |
 
-Work is planned on the [project board](PLAN.md): one task per commit, each
-task moving from `todo` to `in progress` to `done`.
+Les agents écrivent le code, les commentaires, les messages de commit et
+leurs propres fichiers en anglais, et la documentation en français.
 
-## Contributing
+Le travail est planifié sur le [tableau de projet](PLAN.md) : une tâche par
+commit, chaque tâche passant de `todo` à `in progress` puis à `done`.
 
-- One task, one commit, with a [Conventional Commits](https://www.conventionalcommits.org)
-  message.
-- `make lint` and `make test` pass before every commit.
-- Documentation changes ship in the same commit as the code they describe.
+## Contribuer
 
-## License
+- Une tâche, un commit, avec un message au format
+  [Conventional Commits](https://www.conventionalcommits.org).
+- `make lint` et `make test` passent avant chaque commit.
+- La documentation part dans le même commit que le code qu'elle décrit.
 
-No license has been chosen yet.
+## Licence
+
+Aucune licence n'a encore été choisie.

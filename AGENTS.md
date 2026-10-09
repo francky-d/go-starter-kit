@@ -95,8 +95,11 @@ Run `make` to list every command.
 
 ## Working rules
 
-- **English everywhere.** Code, comments, documentation, commit messages and
-  agent files are written in English.
+- **Languages.** Code, comments, commit messages, `PLAN.md`, the review and
+  agent files (`AGENTS.md`, `CLAUDE.md`, skills) are written in English.
+  The documentation, `docs/` and `README.md`, is written in French; an
+  English translation will follow. Identifiers, commands, API messages and
+  code samples inside the documentation stay as they are in the code.
 - **Configuration.** Read settings only through the typed configuration in
   `internal/config`. Never call `os.Getenv` anywhere else, except in
   `internal/testutil`, which reads `TEST_DATABASE_URL`.

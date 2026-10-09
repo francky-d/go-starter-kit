@@ -1,12 +1,12 @@
-# Getting started
+# Prise en main
 
-## Prerequisites
+## Prérequis
 
-- Go 1.26 or later.
-- Docker with Compose v2, for the local PostgreSQL database.
+- Go 1.26 ou plus récent.
+- Docker avec Compose v2, pour la base PostgreSQL locale.
 - `make`.
 
-## First steps
+## Premiers pas
 
 ```bash
 git clone https://github.com/francky-d/go-starter-kit.git
@@ -16,88 +16,89 @@ make docker-up
 make test
 ```
 
-Before running the API, set `JWT_SECRET` in `.env` to a random value of at
-least 32 bytes. This command prints 64 hex characters, which encode 32
-random bytes:
+Avant de lancer l'API, renseignez `JWT_SECRET` dans `.env` avec une valeur
+aléatoire d'au moins 32 octets. Cette commande affiche 64 caractères
+hexadécimaux, qui encodent 32 octets aléatoires :
 
 ```bash
 openssl rand -hex 32
 ```
 
-`make docker-up` starts PostgreSQL 17 and waits until it accepts
-connections. See [database.md](database.md) for details.
+`make docker-up` démarre PostgreSQL 17 et attend qu'il accepte les
+connexions. Voir [database.md](database.md) pour le détail.
 
-Create the schema before running the API:
+Créez le schéma avant de lancer l'API :
 
 ```bash
 make migrate-up
 ```
 
-## Run the API
+## Lancer l'API
 
 ```bash
 make run
 ```
 
-The server listens on `HTTP_PORT` (`8080` by default). Check that it
-answers:
+Le serveur écoute sur `HTTP_PORT` (`8080` par défaut). Vérifiez qu'il
+répond :
 
 ```bash
 curl -s http://localhost:8080/health
 # {"data":{"status":"ok","database":"ok"}}
 ```
 
-The API refuses to start if the database is unreachable within
+L'API refuse de démarrer si la base est injoignable avant
 `DB_CONNECT_TIMEOUT`.
 
-Logs are written to standard output. Stop the server with `Ctrl+C`: it
-finishes the requests in flight before exiting.
+Les logs sont écrits sur la sortie standard. Arrêtez le serveur avec
+`Ctrl+C` : il termine les requêtes en cours avant de s'arrêter.
 
-## Live reload
+## Rechargement à chaud
 
 ```bash
 make dev
 ```
 
-`make dev` runs the API with [Air](https://github.com/air-verse/air): it
-rebuilds and restarts the server whenever a `.go` or `.sql` file or the
-`.env` file changes. Test files, `docs/` and `tmp/` are not watched. Before
-each restart the server receives an interrupt, so requests in flight
-finish as on a real shutdown.
+`make dev` lance l'API avec [Air](https://github.com/air-verse/air) : il
+recompile et redémarre le serveur dès qu'un fichier `.go` ou `.sql`, ou le
+fichier `.env`, change. Les fichiers de test, `docs/` et `tmp/` ne sont pas
+surveillés. Avant chaque redémarrage, le serveur reçoit une interruption :
+les requêtes en cours se terminent comme lors d'un vrai arrêt.
 
-While the code does not compile, the server is stopped; the next
-successful build starts it again.
+Tant que le code ne compile pas, le serveur reste arrêté ; la compilation
+suivante qui réussit le relance.
 
-- A new migration is embedded at the next rebuild, but applied only by
-  `make migrate-up`, or at startup with `DB_AUTO_MIGRATE=true`.
-- The binary and the build errors go to `tmp/`, which git ignores; Air
-  deletes the folder when it stops.
-- Air is pinned in the `Makefile` and runs through `go run`: nothing to
-  install. The first run downloads it.
+- Une nouvelle migration est embarquée à la recompilation suivante, mais
+  appliquée seulement par `make migrate-up`, ou au démarrage avec
+  `DB_AUTO_MIGRATE=true`.
+- Le binaire et les erreurs de compilation vont dans `tmp/`, que git
+  ignore ; Air supprime ce dossier quand il s'arrête.
+- Air est épinglé dans le `Makefile` et s'exécute via `go run` : rien à
+  installer. Le premier lancement le télécharge.
 
-## Commands
+## Commandes
 
-Run `make` to list every command.
+`make` liste toutes les commandes.
 
-| Command | Effect |
+| Commande | Effet |
 | --- | --- |
-| `make run` | Run the API with `go run`. |
-| `make dev` | Run the API with live reload: rebuild and restart on every Go or SQL change. |
-| `make build` | Compile the API and the migrate command into `bin/`. |
-| `make docker-up` | Start PostgreSQL and wait until it is ready. |
-| `make docker-full` | Build the API image and start it with PostgreSQL. Needs `JWT_SECRET`. |
-| `make docker-down` | Stop the containers, keeping the database data. |
-| `make docker-reset` | Stop the containers and delete the database data. |
-| `make docker-logs` | Follow the logs of the running containers. |
-| `make migrate-up` | Apply every pending migration. |
-| `make migrate-down` | Roll back the last migration. |
-| `make migrate-version` | Print the current migration version. |
-| `make migrate-create name=...` | Create an empty up/down migration pair. |
-| `make test` | Run the test suite. PostgreSQL must be running. |
-| `make test-cover` | Run the test suite with coverage and print the total. |
-| `make lint` | Check formatting and `go.mod`, then run `go vet` and `staticcheck`. |
-| `make fmt` | Format every Go file with `gofmt`. |
-| `make tidy` | Sync `go.mod` and `go.sum` with the imports. |
+| `make run` | Lance l'API avec `go run`. |
+| `make dev` | Lance l'API avec rechargement à chaud : recompile et redémarre à chaque changement Go ou SQL. |
+| `make build` | Compile l'API et la commande de migration dans `bin/`. |
+| `make docker-up` | Démarre PostgreSQL et attend qu'il soit prêt. |
+| `make docker-full` | Construit l'image de l'API et la démarre avec PostgreSQL. Nécessite `JWT_SECRET`. |
+| `make docker-down` | Arrête les conteneurs en conservant les données de la base. |
+| `make docker-reset` | Arrête les conteneurs et supprime les données de la base. |
+| `make docker-logs` | Suit les logs des conteneurs en cours d'exécution. |
+| `make migrate-up` | Applique toutes les migrations en attente. |
+| `make migrate-down` | Annule la dernière migration. |
+| `make migrate-version` | Affiche la version actuelle des migrations. |
+| `make migrate-create name=...` | Crée une paire de migrations up/down vide. |
+| `make test` | Lance la suite de tests. PostgreSQL doit tourner. |
+| `make test-cover` | Lance la suite de tests avec couverture et affiche le total. |
+| `make lint` | Vérifie le formatage et `go.mod`, puis lance `go vet` et `staticcheck`. |
+| `make fmt` | Formate chaque fichier Go avec `gofmt`. |
+| `make tidy` | Synchronise `go.mod` et `go.sum` avec les imports. |
 
-`staticcheck` is pinned in `go.mod` with the `tool` directive and runs
-through `go tool staticcheck`: nothing to install.
+`staticcheck` est épinglé dans `go.mod` avec la directive `tool` et
+s'exécute via `go tool staticcheck` : rien à installer.

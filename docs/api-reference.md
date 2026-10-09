@@ -1,11 +1,11 @@
-# API reference
+# Référence de l'API
 
-This page describes the HTTP contract of the API: the response envelopes,
-the error format, and every endpoint.
+Cette page décrit le contrat HTTP de l'API : les enveloppes de réponse, le
+format des erreurs et chaque endpoint.
 
-## Response envelope
+## Enveloppe de réponse
 
-Every successful JSON response wraps its payload in `data`:
+Chaque réponse JSON de succès place son contenu dans `data` :
 
 ```json
 {
@@ -13,7 +13,7 @@ Every successful JSON response wraps its payload in `data`:
 }
 ```
 
-Collections that are paginated add a `meta` object:
+Les collections paginées ajoutent un objet `meta` :
 
 ```json
 {
@@ -22,27 +22,28 @@ Collections that are paginated add a `meta` object:
 }
 ```
 
-`204 No Content` responses have no body.
+Les réponses `204 No Content` n'ont pas de corps.
 
-## Headers
+## En-têtes
 
-Every response carries:
+Chaque réponse porte :
 
-| Header | Value |
+| En-tête | Valeur |
 | --- | --- |
-| `X-Request-Id` | Identifier of the request, also written in every log record about it. A client-provided value is kept when it has 1 to 64 letters, digits, `.`, `_` or `-`; otherwise a new one is generated. |
+| `X-Request-Id` | Identifiant de la requête, également écrit dans chaque log qui la concerne. Une valeur fournie par le client est conservée si elle compte de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon une nouvelle est générée. |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
 | `Referrer-Policy` | `no-referrer` |
 
-Send request bodies as JSON with `Content-Type: application/json`. Bodies
-larger than `HTTP_BODY_LIMIT` are rejected.
+Envoyez les corps de requête en JSON avec
+`Content-Type: application/json`. Les corps plus grands que
+`HTTP_BODY_LIMIT` sont rejetés.
 
-## Errors
+## Erreurs
 
-Every error response has the same shape. `errors` is present only for
-validation failures and maps each invalid field to its messages:
+Chaque réponse d'erreur a la même forme. `errors` n'est présent que pour
+les échecs de validation et associe à chaque champ invalide ses messages :
 
 ```json
 {
@@ -53,80 +54,81 @@ validation failures and maps each invalid field to its messages:
 }
 ```
 
-### Status codes
+### Codes de statut
 
-| Status | Message | When |
+| Statut | Message | Quand |
 | --- | --- | --- |
-| 400 | `Malformed request body.` | The body is not valid JSON, or a value has the wrong type. |
-| 401 | `Unauthenticated.` | Authentication is missing or invalid. Login answers `Invalid credentials.` instead. |
-| 403 | `This action is forbidden.` | The caller is authenticated but not allowed. |
-| 404 | `Resource not found.` | The route or the record does not exist, or the record belongs to someone else. |
-| 409 | depends on the error | The request conflicts with the current state. |
-| 413 | `Request Entity Too Large.` | The body is larger than `HTTP_BODY_LIMIT`. |
-| 415 | `Unsupported Media Type.` | The body is not sent as `application/json`. |
-| 422 | `The given data was invalid.` | Validation failed; see `errors`. |
-| 429 | `Too many requests.` | A rate limit was hit. The `Retry-After` header gives the seconds to wait. |
-| 500 | `Internal server error.` | An unexpected error occurred. |
-| 503 | `Service unavailable.` | A dependency is down, or the request ran longer than `HTTP_REQUEST_TIMEOUT`. |
+| 400 | `Malformed request body.` | Le corps n'est pas du JSON valide, ou une valeur a le mauvais type. |
+| 401 | `Unauthenticated.` | L'authentification est absente ou invalide. La connexion répond `Invalid credentials.` à la place. |
+| 403 | `This action is forbidden.` | L'appelant est authentifié mais n'a pas le droit. |
+| 404 | `Resource not found.` | La route ou l'enregistrement n'existe pas, ou l'enregistrement appartient à quelqu'un d'autre. |
+| 409 | selon l'erreur | La requête entre en conflit avec l'état actuel. |
+| 413 | `Request Entity Too Large.` | Le corps dépasse `HTTP_BODY_LIMIT`. |
+| 415 | `Unsupported Media Type.` | Le corps n'est pas envoyé en `application/json`. |
+| 422 | `The given data was invalid.` | La validation a échoué ; voir `errors`. |
+| 429 | `Too many requests.` | Une limite de débit est atteinte. L'en-tête `Retry-After` donne le nombre de secondes à attendre. |
+| 500 | `Internal server error.` | Une erreur inattendue s'est produite. |
+| 503 | `Service unavailable.` | Une dépendance est indisponible, ou la requête a dépassé `HTTP_REQUEST_TIMEOUT`. |
 
-Other statuses produced by the HTTP layer (for example `405`) use the
-standard reason phrase as message, such as `Method Not Allowed.`.
+Les autres statuts produits par la couche HTTP (par exemple `405`) ont pour
+message la phrase standard du statut, comme `Method Not Allowed.`.
 
-### Validation errors
+### Erreurs de validation
 
-Each key of `errors` is the JSON name of an invalid field. Nested fields
-use their path, such as `address.city` or `items[1].name`. A field can have
-several messages.
+Chaque clé de `errors` est le nom JSON d'un champ invalide. Les champs
+imbriqués utilisent leur chemin, comme `address.city` ou `items[1].name`.
+Un champ peut avoir plusieurs messages.
 
-| Rule | Message |
+| Règle | Message |
 | --- | --- |
 | required | `is required` |
 | email | `must be a valid email address` |
 | uuid | `must be a valid UUID` |
 | url | `must be a valid URL` |
 | oneof | `must be one of: <values>` |
-| min, gte | `must be at least <n>`, with `characters` for text and `items` for lists |
-| max, lte | `must be at most <n>`, with `characters` for text and `items` for lists |
-| len | `must be exactly <n>`, with the same units |
-| any other rule | `is invalid` |
+| min, gte | `must be at least <n>`, avec `characters` pour du texte et `items` pour des listes |
+| max, lte | `must be at most <n>`, avec `characters` pour du texte et `items` pour des listes |
+| len | `must be exactly <n>`, avec les mêmes unités |
+| toute autre règle | `is invalid` |
 
-Messages never repeat the submitted value. Fields the endpoint does not
-expect are ignored.
+Les messages ne répètent jamais la valeur envoyée. Les champs que
+l'endpoint n'attend pas sont ignorés.
 
-### What an error never contains
+### Ce qu'une erreur ne contient jamais
 
-Error messages are written to be safe for any client:
+Les messages d'erreur sont écrits pour être sûrs quel que soit le client :
 
-- a `404` does not say whether the record exists;
-- a `403` names neither the owner nor the missing permission;
-- a `400` never quotes the JSON parser's error, which could repeat part of
-  the body;
-- a `500` never carries an internal error message, a file path or a stack
-  trace. The cause is written to the server logs instead.
+- un `404` ne dit pas si l'enregistrement existe ;
+- un `403` ne nomme ni le propriétaire ni la permission manquante ;
+- un `400` ne cite jamais l'erreur du parseur JSON, qui pourrait répéter
+  une partie du corps ;
+- un `500` ne porte jamais de message d'erreur interne, de chemin de
+  fichier ou de pile d'appels. La cause est écrite dans les logs du
+  serveur.
 
-`HEAD` requests receive the status code without a body.
+Les requêtes `HEAD` reçoivent le code de statut sans corps.
 
 ## Endpoints
 
-| Method | Path | Authentication | Purpose |
+| Méthode | Chemin | Authentification | Objet |
 | --- | --- | --- | --- |
-| `GET` | `/health` | none | Report whether the application and its database can serve requests. |
-| `POST` | `/api/v1/auth/register` | none, rate limited | Create an account and start a session. |
-| `POST` | `/api/v1/auth/login` | none, rate limited | Start a session with an email and a password. |
-| `POST` | `/api/v1/auth/refresh` | none, rate limited | Exchange a refresh token for a new session. |
-| `POST` | `/api/v1/auth/logout` | none, rate limited | Revoke a refresh token. |
-| `GET` | `/api/v1/me` | bearer access token | Return the authenticated user. |
+| `GET` | `/health` | aucune | Indique si l'application et sa base peuvent servir des requêtes. |
+| `POST` | `/api/v1/auth/register` | aucune, débit limité | Crée un compte et démarre une session. |
+| `POST` | `/api/v1/auth/login` | aucune, débit limité | Démarre une session avec un email et un mot de passe. |
+| `POST` | `/api/v1/auth/refresh` | aucune, débit limité | Échange un jeton de rafraîchissement contre une nouvelle session. |
+| `POST` | `/api/v1/auth/logout` | aucune, débit limité | Révoque un jeton de rafraîchissement. |
+| `GET` | `/api/v1/me` | jeton d'accès bearer | Renvoie l'utilisateur authentifié. |
 
-Register and login together accept `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE`
-requests per minute from each client IP; refresh and logout together
-accept `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE`. Beyond that they answer `429`.
-See [authentication.md](authentication.md) for how sessions and tokens
-work.
+L'inscription et la connexion acceptent ensemble
+`AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` requêtes par minute et par IP
+client ; le rafraîchissement et la déconnexion acceptent ensemble
+`AUTH_REFRESH_RATE_LIMIT_PER_MINUTE`. Au-delà, ils répondent `429`. Voir
+[authentication.md](authentication.md) pour le fonctionnement des sessions
+et des jetons.
 
 ### `GET /health`
 
-Answers `200` when the application can reach its database within two
-seconds:
+Répond `200` quand l'application joint sa base en moins de deux secondes :
 
 ```bash
 curl -s http://localhost:8080/health
@@ -136,16 +138,18 @@ curl -s http://localhost:8080/health
 { "data": { "status": "ok", "database": "ok" } }
 ```
 
-Answers `503` with `{"message":"Service unavailable."}` otherwise; the cause
-is written to the server logs.
+Répond `503` avec `{"message":"Service unavailable."}` sinon ; la cause est
+écrite dans les logs du serveur.
 
-Use it as a **readiness** probe, so traffic stops while the database is
-down. Do not use it as a liveness probe: restarting the API does not fix a
-database outage.
+Utilisez-le comme sonde de disponibilité (**readiness**), pour que le
+trafic s'arrête pendant que la base est indisponible. Ne l'utilisez pas
+comme sonde de vivacité (liveness) : redémarrer l'API ne répare pas une
+panne de la base.
 
 ### Sessions
 
-Register, login and refresh answer with a session:
+L'inscription, la connexion et le rafraîchissement répondent par une
+session :
 
 ```json
 {
@@ -165,14 +169,14 @@ Register, login and refresh answer with a session:
 }
 ```
 
-| Field | Content |
+| Champ | Contenu |
 | --- | --- |
-| `access_token` | Send it as `Authorization: Bearer <access_token>` to authenticated routes. |
-| `expires_in` | Seconds until the access token expires. |
-| `refresh_token` | Exchange it at `/api/v1/auth/refresh` before `refresh_token_expires_at`. Each refresh token works once. |
+| `access_token` | À envoyer sous la forme `Authorization: Bearer <access_token>` aux routes authentifiées. |
+| `expires_in` | Secondes restantes avant l'expiration du jeton d'accès. |
+| `refresh_token` | À échanger sur `/api/v1/auth/refresh` avant `refresh_token_expires_at`. Chaque jeton de rafraîchissement ne sert qu'une fois. |
 
-Store the refresh token as carefully as a password: whoever holds it can
-open a session.
+Conservez le jeton de rafraîchissement avec le même soin qu'un mot de
+passe : qui le détient peut ouvrir une session.
 
 ### `POST /api/v1/auth/register`
 
@@ -182,17 +186,17 @@ curl -s http://localhost:8080/api/v1/auth/register \
   -d '{"name":"Ada Lovelace","email":"ada@example.com","password":"correct horse battery staple"}'
 ```
 
-| Field | Rules |
+| Champ | Règles |
 | --- | --- |
-| `name` | Required, at most 100 characters. |
-| `email` | Required, a valid email, at most 254 characters. Stored in lowercase. |
-| `password` | Required, 8 to 72 characters, and at most 72 bytes. |
+| `name` | Obligatoire, 100 caractères au plus. |
+| `email` | Obligatoire, un email valide, 254 caractères au plus. Stocké en minuscules. |
+| `password` | Obligatoire, de 8 à 72 caractères, et 72 octets au plus. |
 
-| Status | When |
+| Statut | Quand |
 | --- | --- |
-| `201` | The account was created; the body is a session. |
-| `409` | The email already has an account: `Unable to register with the provided details.` |
-| `422` | A field is invalid. |
+| `201` | Le compte est créé ; le corps est une session. |
+| `409` | L'email a déjà un compte : `Unable to register with the provided details.` |
+| `422` | Un champ est invalide. |
 
 ### `POST /api/v1/auth/login`
 
@@ -202,11 +206,11 @@ curl -s http://localhost:8080/api/v1/auth/login \
   -d '{"email":"ada@example.com","password":"correct horse battery staple"}'
 ```
 
-| Status | When |
+| Statut | Quand |
 | --- | --- |
-| `200` | The body is a new session. |
-| `401` | `Invalid credentials.`, whether the email is unknown or the password is wrong. |
-| `422` | `email` or `password` is missing, or `email` is longer than 254 characters. |
+| `200` | Le corps est une nouvelle session. |
+| `401` | `Invalid credentials.`, que l'email soit inconnu ou le mot de passe faux. |
+| `422` | `email` ou `password` manque, ou `email` dépasse 254 caractères. |
 
 ### `POST /api/v1/auth/refresh`
 
@@ -216,11 +220,11 @@ curl -s http://localhost:8080/api/v1/auth/refresh \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
 
-| Status | When |
+| Statut | Quand |
 | --- | --- |
-| `200` | The body is a new session; the refresh token sent is now revoked. |
-| `401` | `Unauthenticated.`: the token is unknown, expired or revoked. A token that was already exchanged also revokes every session of its user. |
-| `422` | `refresh_token` is missing or longer than 128 characters. |
+| `200` | Le corps est une nouvelle session ; le jeton envoyé est désormais révoqué. |
+| `401` | `Unauthenticated.` : le jeton est inconnu, expiré ou révoqué. Un jeton déjà échangé révoque en plus toutes les sessions de son utilisateur. |
+| `422` | `refresh_token` manque ou dépasse 128 caractères. |
 
 ### `POST /api/v1/auth/logout`
 
@@ -230,16 +234,17 @@ curl -s -i http://localhost:8080/api/v1/auth/logout \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
 
-| Status | When |
+| Statut | Quand |
 | --- | --- |
-| `204` | The refresh token is revoked. An unknown or already revoked token gets the same answer. |
-| `422` | `refresh_token` is missing or longer than 128 characters. |
+| `204` | Le jeton de rafraîchissement est révoqué. Un jeton inconnu ou déjà révoqué reçoit la même réponse. |
+| `422` | `refresh_token` manque ou dépasse 128 caractères. |
 
-The access token stays valid until it expires; delete it on the client.
+Le jeton d'accès reste valide jusqu'à son expiration ; supprimez-le côté
+client.
 
 ### `GET /api/v1/me`
 
-Returns the user the access token was issued to.
+Renvoie l'utilisateur à qui le jeton d'accès a été délivré.
 
 ```bash
 curl -s http://localhost:8080/api/v1/me \
@@ -257,11 +262,11 @@ curl -s http://localhost:8080/api/v1/me \
 }
 ```
 
-| Status | When |
+| Statut | Quand |
 | --- | --- |
-| `200` | The body is the user. |
-| `401` | `Unauthenticated.`: the token is missing, invalid or expired, or its user no longer exists. |
+| `200` | Le corps est l'utilisateur. |
+| `401` | `Unauthenticated.` : le jeton est absent, invalide ou expiré, ou son utilisateur n'existe plus. |
 
-On a `401`, the `WWW-Authenticate` header says whether to refresh the
-session or to sign in; see
-[authentication.md](authentication.md#authenticating-requests).
+Sur un `401`, l'en-tête `WWW-Authenticate` indique s'il faut rafraîchir la
+session ou se reconnecter ; voir
+[authentication.md](authentication.md#authentifier-les-requêtes).

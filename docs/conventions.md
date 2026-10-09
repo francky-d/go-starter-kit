@@ -1,51 +1,59 @@
 # Conventions
 
-The code of this kit is written to read like plain English while staying
-idiomatic Go. This page summarises the rules. The complete, authoritative
-version is the [conventions skill](../.claude/skills/conventions/SKILL.md),
-which AI agents load before writing code and which humans can read as a
-style guide.
+Le code de ce kit est écrit pour se lire comme de l'anglais courant tout en
+restant du Go idiomatique. Cette page résume les règles. La version
+complète, qui fait référence, est le
+[skill conventions](../.claude/skills/conventions/SKILL.md) : les agents IA
+le chargent avant d'écrire du code, et les humains peuvent le lire comme un
+guide de style.
 
-## Reading order of a request
+## Ordre de lecture d'une requête
 
 ```text
 router -> middleware -> controller -> service -> repository -> database
 ```
 
-| Layer | Responsibility |
+| Couche | Responsabilité |
 | --- | --- |
-| Controller | Binds the input, calls one service method, returns a response. |
-| Request | Declares input fields and their validation rules. |
-| Resource | Shapes a model into the JSON a client sees. |
-| Service | Holds business rules and transactions; returns application errors. |
-| Repository | Runs queries; returns models or sentinel errors. |
-| Model | Maps a table; small helpers on a single record. |
+| Contrôleur | Lie l'entrée, appelle une méthode de service, renvoie une réponse. |
+| Request | Déclare les champs d'entrée et leurs règles de validation. |
+| Resource | Met en forme un modèle dans le JSON que voit le client. |
+| Service | Porte les règles métier et les transactions ; renvoie des erreurs applicatives. |
+| Repository | Exécute les requêtes ; renvoie des modèles ou des erreurs sentinelles. |
+| Modèle | Représente une table ; de petits helpers sur un seul enregistrement. |
 
-## Key rules
+## Règles principales
 
-- **One function, one job.** A function does exactly what its name says.
-  Steps are extracted into named private functions; aim for 20 to 25
-  lines.
-- **Small interfaces, declared by their consumer**, and only when a test or
-  a second implementation needs one.
-- **Comments only when necessary.** The code explains itself; a comment
-  explains a concept, a constraint or a deliberate choice, never what a
-  name already says.
-- **Names say what things do.** `users.FindByEmail(ctx, email)`,
+- **Une fonction, une tâche.** Une fonction fait exactement ce que dit son
+  nom. Les étapes sont extraites dans des fonctions privées nommées ; visez
+  20 à 25 lignes.
+- **De petites interfaces, déclarées par leur consommateur**, et seulement
+  quand un test ou une seconde implémentation en a besoin.
+- **Des commentaires seulement quand c'est nécessaire.** Le code s'explique
+  lui-même ; un commentaire explique un concept, une contrainte ou un choix
+  délibéré, jamais ce qu'un nom dit déjà.
+- **Les noms disent ce que font les choses.**
+  `users.FindByEmail(ctx, email)`,
   `respond.Created(c, resources.NewUser(user))`.
-- **Explicit dependencies.** Every type is built by a `NewXxx` constructor
-  that receives its dependencies. There is no global container.
-- **Controllers stay thin.** They never build error JSON and never query the
-  database.
-- **Errors disclose nothing.** Clients get generic messages for 401, 403,
-  404 and 500. Internal causes are logged, never returned. The only
-  accepted disclosure is a 409 when registering a taken email.
-- **Models are never serialised directly.** A resource decides which fields
-  leave the server.
-- **Configuration is typed.** Only `internal/config` reads environment
-  variables.
-- **Context everywhere.** Every function doing I/O takes `ctx` first.
-- **Migrations are append-only.** Never edit a migration that has been
-  applied outside your machine; write a new one.
-- **Every change is tested**, against a real PostgreSQL database when the
-  database is involved.
+- **Des dépendances explicites.** Chaque type est construit par un
+  constructeur `NewXxx` qui reçoit ses dépendances. Il n'y a pas de
+  conteneur global.
+- **Des contrôleurs minces.** Ils ne construisent jamais de JSON d'erreur
+  et n'interrogent jamais la base.
+- **Les erreurs ne divulguent rien.** Les clients reçoivent des messages
+  génériques pour les 401, 403, 404 et 500. Les causes internes sont
+  journalisées, jamais renvoyées. La seule divulgation acceptée est un 409
+  à l'inscription d'un email déjà pris.
+- **Les modèles ne sont jamais sérialisés directement.** Une resource
+  décide quels champs quittent le serveur.
+- **La configuration est typée.** Seul `internal/config` lit les variables
+  d'environnement.
+- **Le contexte partout.** Chaque fonction qui fait des I/O prend `ctx` en
+  premier.
+- **Les migrations ne font qu'ajouter.** Ne modifiez jamais une migration
+  appliquée ailleurs que sur votre machine ; écrivez-en une nouvelle.
+- **Chaque changement est testé**, contre une vraie base PostgreSQL quand
+  la base est concernée.
+- **Deux langues.** Le code, les commentaires et les messages de commit
+  sont en anglais ; la documentation (`docs/` et `README.md`) est en
+  français.

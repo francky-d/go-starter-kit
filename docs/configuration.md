@@ -1,128 +1,132 @@
 # Configuration
 
-The application reads its configuration from environment variables when it
-starts. The `internal/config` package is the only code that reads them; every
-other package receives the values it needs through its constructor.
+L'application lit sa configuration dans les variables d'environnement au
+démarrage. Le package `internal/config` est le seul code qui les lit ; tout
+autre package reçoit les valeurs dont il a besoin par son constructeur.
 
-## How values are resolved
+## Résolution des valeurs
 
-1. A variable set in the process environment wins.
-2. Otherwise, a value from a `.env` file in the working directory is used.
-   The file is optional.
-3. Otherwise, the default listed below applies.
+1. Une variable définie dans l'environnement du processus l'emporte.
+2. Sinon, la valeur d'un fichier `.env` du répertoire de travail est
+   utilisée. Le fichier est facultatif.
+3. Sinon, la valeur par défaut indiquée ci-dessous s'applique.
 
-Start from the template:
+Partez du modèle :
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` is ignored by git. Never commit real secrets.
+`.env` est ignoré par git. Ne commitez jamais de vrais secrets.
 
 ## Validation
 
-The configuration is validated once, at startup. An invalid value stops the
-application with an error listing **every** problem found, so a deployment
-can be fixed in a single pass:
+La configuration est validée une fois, au démarrage. Une valeur invalide
+arrête l'application avec une erreur qui liste **tous** les problèmes
+trouvés, pour qu'un déploiement se corrige en une seule passe :
 
 ```text
 config: invalid configuration: APP_ENV must be one of [development test production], got "staging"
 HTTP_PORT must be between 1 and 65535, got 0
 ```
 
-A value of the wrong type (for example `HTTP_PORT=http`) is reported with the
-name of the configuration field and the rejected value.
+Une valeur du mauvais type (par exemple `HTTP_PORT=http`) est signalée avec
+le nom du champ de configuration et la valeur rejetée.
 
 ## Variables
 
-Durations use Go syntax: `500ms`, `10s`, `5m`, `1h30m`.
+Les durées suivent la syntaxe Go : `500ms`, `10s`, `5m`, `1h30m`.
 
 ### Application
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `APP_NAME` | `go-starter-kit` | Name of the application. |
-| `APP_ENV` | `development` | One of `development`, `test`, `production`. |
+| `APP_NAME` | `go-starter-kit` | Nom de l'application. |
+| `APP_ENV` | `development` | `development`, `test` ou `production`. |
 
-### HTTP server
+### Serveur HTTP
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `HTTP_PORT` | `8080` | Port the server listens on (1 to 65535). |
-| `HTTP_READ_HEADER_TIMEOUT` | `5s` | Maximum time to read the request headers. |
-| `HTTP_READ_TIMEOUT` | `10s` | Maximum time to read the whole request, body included. |
-| `HTTP_WRITE_TIMEOUT` | `30s` | Maximum time to write the response. |
-| `HTTP_IDLE_TIMEOUT` | `60s` | Maximum time a keep-alive connection waits for the next request. |
-| `HTTP_SHUTDOWN_TIMEOUT` | `10s` | Maximum time to finish in-flight requests on shutdown. |
-| `HTTP_REQUEST_TIMEOUT` | `15s` | Deadline of each request's context; a request whose work is cancelled by the deadline answers `503`. Must be below `HTTP_WRITE_TIMEOUT`. |
-| `HTTP_BODY_LIMIT` | `1M` | Largest accepted request body, such as `512K` or `2M`. Larger bodies answer `413`. |
-| `HTTP_TRUST_PROXY` | `false` | Read the client IP from `X-Forwarded-For`. See below. |
+| `HTTP_PORT` | `8080` | Port d'écoute du serveur (de 1 à 65535). |
+| `HTTP_READ_HEADER_TIMEOUT` | `5s` | Durée maximale de lecture des en-têtes de la requête. |
+| `HTTP_READ_TIMEOUT` | `10s` | Durée maximale de lecture de toute la requête, corps compris. |
+| `HTTP_WRITE_TIMEOUT` | `30s` | Durée maximale d'écriture de la réponse. |
+| `HTTP_IDLE_TIMEOUT` | `60s` | Durée maximale pendant laquelle une connexion keep-alive attend la requête suivante. |
+| `HTTP_SHUTDOWN_TIMEOUT` | `10s` | Durée maximale pour terminer les requêtes en cours à l'arrêt. |
+| `HTTP_REQUEST_TIMEOUT` | `15s` | Échéance du contexte de chaque requête ; une requête dont le travail est annulé par l'échéance répond `503`. Doit être inférieure à `HTTP_WRITE_TIMEOUT`. |
+| `HTTP_BODY_LIMIT` | `1M` | Taille maximale du corps de requête, comme `512K` ou `2M`. Les corps plus grands répondent `413`. |
+| `HTTP_TRUST_PROXY` | `false` | Lit l'IP client dans `X-Forwarded-For`. Voir ci-dessous. |
 
-All timeouts must be positive.
+Tous les délais doivent être positifs.
 
-#### Behind a reverse proxy
+#### Derrière un reverse proxy
 
-By default the client IP is the address of the TCP peer. Behind a load
-balancer or reverse proxy, that is the proxy's address: set
-`HTTP_TRUST_PROXY=true` so the IP is read from `X-Forwarded-For`. The header
-is then honoured only when the peer is on a loopback or private network.
-Never enable it when clients reach the API directly: they could choose the
-IP that the logs and the rate limits see.
+Par défaut, l'IP client est l'adresse du pair TCP. Derrière un load
+balancer ou un reverse proxy, c'est l'adresse du proxy : réglez
+`HTTP_TRUST_PROXY=true` pour lire l'IP dans `X-Forwarded-For`. L'en-tête
+n'est alors pris en compte que si le pair est sur une boucle locale ou un
+réseau privé. Ne l'activez jamais quand les clients joignent l'API
+directement : ils pourraient choisir l'IP que voient les logs et les
+limites de débit.
 
-The API sends no `Strict-Transport-Security` header: it expects TLS to be
-terminated by the proxy, which should send it. If the API terminates TLS
-itself, add an `HSTSMaxAge` to the secure headers middleware.
+L'API n'envoie pas d'en-tête `Strict-Transport-Security` : elle s'attend à
+ce que le TLS soit terminé par le proxy, qui doit l'envoyer. Si l'API
+termine elle-même le TLS, ajoutez un `HSTSMaxAge` au middleware des
+en-têtes de sécurité.
 
 ### CORS
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `CORS_ALLOWED_ORIGINS` | *(empty)* | Comma-separated browser origins allowed to call the API, such as `https://app.example.com, http://localhost:3000`. Each entry is `scheme://host[:port]` or `*`. |
+| `CORS_ALLOWED_ORIGINS` | *(vide)* | Origines navigateur autorisées à appeler l'API, séparées par des virgules, comme `https://app.example.com, http://localhost:3000`. Chaque entrée vaut `scheme://host[:port]` ou `*`. |
 
-With no origin configured, the API sends no CORS headers and browsers on
-other origins cannot call it. Credentials (cookies) are never allowed:
-clients authenticate with a bearer token.
+Sans origine configurée, l'API n'envoie aucun en-tête CORS et les
+navigateurs sur d'autres origines ne peuvent pas l'appeler. Les
+identifiants de navigateur (cookies) ne sont jamais autorisés : les clients
+s'authentifient avec un jeton bearer.
 
-### Database
+### Base de données
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `DATABASE_URL` | **required** | PostgreSQL connection URL, for example `postgres://app:app@localhost:5432/app?sslmode=disable`. |
-| `DB_CONNECT_TIMEOUT` | `5s` | Maximum time to reach the database at startup. |
-| `DB_MAX_OPEN_CONNECTIONS` | `25` | Maximum number of open connections (at least 1). |
-| `DB_MAX_IDLE_CONNECTIONS` | `25` | Maximum number of idle connections kept in the pool (0 to `DB_MAX_OPEN_CONNECTIONS`). |
-| `DB_CONNECTION_MAX_LIFETIME` | `30m` | A connection is replaced after this time. |
-| `DB_CONNECTION_MAX_IDLE_TIME` | `5m` | An idle connection is closed after this time. |
-| `DB_SLOW_QUERY_THRESHOLD` | `200ms` | Queries slower than this are logged as warnings. |
-| `DB_AUTO_MIGRATE` | `false` | Apply pending migrations when the API starts. See [database.md](database.md#migrations). |
+| `DATABASE_URL` | **obligatoire** | URL de connexion PostgreSQL, par exemple `postgres://app:app@localhost:5432/app?sslmode=disable`. |
+| `DB_CONNECT_TIMEOUT` | `5s` | Durée maximale pour joindre la base au démarrage. |
+| `DB_MAX_OPEN_CONNECTIONS` | `25` | Nombre maximal de connexions ouvertes (au moins 1). |
+| `DB_MAX_IDLE_CONNECTIONS` | `25` | Nombre maximal de connexions inactives gardées dans le pool (de 0 à `DB_MAX_OPEN_CONNECTIONS`). |
+| `DB_CONNECTION_MAX_LIFETIME` | `30m` | Une connexion est remplacée après cette durée. |
+| `DB_CONNECTION_MAX_IDLE_TIME` | `5m` | Une connexion inactive est fermée après cette durée. |
+| `DB_SLOW_QUERY_THRESHOLD` | `200ms` | Les requêtes plus lentes sont journalisées en avertissement. |
+| `DB_AUTO_MIGRATE` | `false` | Applique les migrations en attente au démarrage de l'API. Voir [database.md](database.md#migrations). |
 
-Use `sslmode=require` (or stricter) in production.
+Utilisez `sslmode=require` (ou plus strict) en production.
 
-### Authentication
+### Authentification
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `BCRYPT_COST` | `12` | bcrypt work factor for password hashes, from 4 to 16. Each step doubles the time to hash and to verify a password; keep at least 12 in production. |
-| `JWT_SECRET` | none, required | Key that signs the access tokens, at least 32 bytes and random. Generate it with `openssl rand -hex 32` and keep all 64 hex characters; use a different one per environment and never commit it. Changing it invalidates every access token already issued. |
-| `JWT_ISSUER` | `go-starter-kit` | Written into every access token; a token from another issuer is refused. |
-| `ACCESS_TOKEN_LIFETIME` | `15m` | How long an access token stays valid. Keep it short: an access token cannot be revoked before it expires. |
-| `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | Requests per minute each client IP may send to register and login together. See [authentication.md](authentication.md#rate-limiting). |
-| `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Requests per minute each client IP may send to refresh and logout together. |
-| `REFRESH_TOKEN_LIFETIME` | `720h` | How long a refresh token stays valid (30 days by default). Must be longer than `ACCESS_TOKEN_LIFETIME`. Go durations have no day unit: write days in hours. |
+| `BCRYPT_COST` | `12` | Facteur de coût bcrypt des hash de mots de passe, de 4 à 16. Chaque cran double le temps de hachage et de vérification d'un mot de passe ; gardez au moins 12 en production. |
+| `JWT_SECRET` | aucun, obligatoire | Clé qui signe les jetons d'accès, d'au moins 32 octets et aléatoire. Générez-la avec `openssl rand -hex 32` et gardez les 64 caractères hexadécimaux ; utilisez-en une différente par environnement et ne la commitez jamais. La changer invalide tous les jetons d'accès déjà délivrés. |
+| `JWT_ISSUER` | `go-starter-kit` | Écrit dans chaque jeton d'accès ; un jeton d'un autre émetteur est refusé. |
+| `ACCESS_TOKEN_LIFETIME` | `15m` | Durée de validité d'un jeton d'accès. Gardez-la courte : un jeton d'accès ne peut pas être révoqué avant son expiration. |
+| `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | Requêtes par minute que chaque IP client peut envoyer à l'inscription et à la connexion réunies. Voir [authentication.md](authentication.md#limitation-de-débit). |
+| `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Requêtes par minute que chaque IP client peut envoyer au rafraîchissement et à la déconnexion réunis. |
+| `REFRESH_TOKEN_LIFETIME` | `720h` | Durée de validité d'un jeton de rafraîchissement (30 jours par défaut). Doit être plus longue que `ACCESS_TOKEN_LIFETIME`. Les durées Go n'ont pas d'unité jour : exprimez les jours en heures. |
 
-### Logging
+### Journalisation
 
-| Variable | Default | Description |
+| Variable | Défaut | Description |
 | --- | --- | --- |
-| `LOG_LEVEL` | `info` | One of `debug`, `info`, `warn`, `error` (case-insensitive). |
-| `LOG_FORMAT` | `json` | `json` for machines, `text` for humans. `.env.example` uses `text`. |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` ou `error` (insensible à la casse). |
+| `LOG_FORMAT` | `json` | `json` pour les machines, `text` pour les humains. `.env.example` utilise `text`. |
 
-## Adding a variable
+## Ajouter une variable
 
-1. Add a field to the right struct in `internal/config/config.go`, with an
-   `env` tag and either an `envDefault` tag or the `required` option
+1. Ajoutez un champ à la bonne struct de `internal/config/config.go`, avec
+   un tag `env` et soit un tag `envDefault`, soit l'option `required`
    (`env:"NAME,required"`).
-2. Add a check to `Validate` when some values are invalid.
-3. Cover it in `internal/config/config_test.go`, including the list of known
-   variables used to clear the environment.
-4. Add it to `.env.example` and to this page.
+2. Ajoutez une vérification à `Validate` quand certaines valeurs sont
+   invalides.
+3. Couvrez-la dans `internal/config/config_test.go`, y compris dans la
+   liste des variables connues qui sert à vider l'environnement.
+4. Ajoutez-la à `.env.example` et à cette page.

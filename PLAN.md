@@ -5,7 +5,8 @@ task ships as exactly one atomic commit.
 
 **Status:** the initial build is complete; every task of phases 1 to 9 is
 done. The [follow-ups](#follow-ups) found during the build wait for a
-decision.
+decision. The [documentation in French and guides](#documentation-in-french-and-guides)
+is in progress.
 
 ## How to use this board
 
@@ -110,3 +111,14 @@ any other task.
 | 31 | Run `govulncheck` in CI, at a pinned version (after row 30, or CI fails) | `ci: run govulncheck` | todo |
 | 32 | Purge expired refresh tokens, with its caller: a migrate-style command or a documented scheduled job | `feat(auth): purge expired refresh tokens` | todo |
 | 33 | Choose a license and add the `LICENSE` file | `chore: add license` | todo |
+
+## Documentation in French and guides
+
+The documentation (`docs/` and `README.md`) is written in French; an
+English translation will follow.
+
+| # | Task | Commit | Status |
+| --- | --- | --- | --- |
+| 34 | Write the documentation in French and update the language rule | `docs: translate the documentation to French` | done |
+| 35 | Document what switching to another database involves | `docs(database): document switching to another database` | todo |
+| 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | todo |

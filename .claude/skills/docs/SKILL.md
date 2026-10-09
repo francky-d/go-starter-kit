@@ -20,7 +20,18 @@ It is the entry point for a developer who has not read the code yet.
   history lives in git.
 - **Show, then explain.** Prefer a short `curl` call, a code excerpt or a
   table over a paragraph.
-- **English, plain words.** Short sentences, one idea each.
+- **French, plain words.** `docs/` and `README.md` are written in French
+  (see the language rule in `AGENTS.md`). Short sentences, one idea each.
+- **What stays in English.** Identifiers, commands, file paths, API
+  messages, and code copied from the repository stay verbatim, comments
+  included. Comments and labels in snippets written only for the
+  documentation (a `# start PostgreSQL` after a shell command, the boxes
+  of a text diagram) are in French.
+- **Same vocabulary everywhere.** Access token is « jeton d'accès »,
+  refresh token is « jeton de rafraîchissement », rate limit is
+  « limitation de débit »; endpoint, middleware and hash stay in English.
+  « repository » names the data-access layer only; the git repository is
+  « dépôt ».
 
 ## Start here
 

@@ -1,39 +1,40 @@
-# Database
+# Base de données
 
-The API stores its data in PostgreSQL 17 and reaches it through
-[GORM](https://gorm.io) with the `pgx` driver.
+L'API stocke ses données dans PostgreSQL 17 et y accède via
+[GORM](https://gorm.io) avec le driver `pgx`.
 
-## Local database
+## Base locale
 
-`docker-compose.yml` runs PostgreSQL for development and tests:
+`docker-compose.yml` lance PostgreSQL pour le développement et les tests :
 
 ```bash
-make docker-up      # start and wait until ready
-make docker-down    # stop the containers, keep the data
-make docker-reset   # stop the containers and delete the data
+make docker-up      # démarre et attend que la base soit prête
+make docker-down    # arrête les conteneurs, conserve les données
+make docker-reset   # arrête les conteneurs et supprime les données
 ```
 
-| Setting | Value |
+| Réglage | Valeur |
 | --- | --- |
-| Host and port | `localhost:5432`, reachable from this machine only |
-| User and password | `app` / `app` |
-| Application database | `app` |
-| Test database | `app_test` |
+| Hôte et port | `localhost:5432`, joignable depuis cette machine seulement |
+| Utilisateur et mot de passe | `app` / `app` |
+| Base de l'application | `app` |
+| Base de test | `app_test` |
 
-The test database is created by `database/init/01_create_test_database.sql`
-the first time the container starts with an empty volume. If you created
-the volume before that script existed, run `make docker-reset`.
+La base de test est créée par `database/init/01_create_test_database.sql`
+au premier démarrage du conteneur sur un volume vide. Si vous avez créé le
+volume avant l'existence de ce script, lancez `make docker-reset`.
 
-These credentials are for local use only.
+Ces identifiants servent uniquement en local.
 
-To use another host port, set `DB_FORWARD_PORT` (in `.env` or the shell)
-and change the port in `DATABASE_URL` and `TEST_DATABASE_URL` to match.
+Pour utiliser un autre port sur l'hôte, réglez `DB_FORWARD_PORT` (dans
+`.env` ou le shell) et changez le port dans `DATABASE_URL` et
+`TEST_DATABASE_URL` en conséquence.
 
-## Test database
+## Base de test
 
-Tests connect to `app_test` on `localhost:5432` by default. Set
-`TEST_DATABASE_URL` to use another database, for example in CI or with a
-different port:
+Les tests se connectent par défaut à `app_test` sur `localhost:5432`.
+Réglez `TEST_DATABASE_URL` pour utiliser une autre base, par exemple en CI
+ou avec un autre port :
 
 ```bash
 TEST_DATABASE_URL=postgres://app:app@localhost:5433/app_test?sslmode=disable make test
@@ -41,123 +42,131 @@ TEST_DATABASE_URL=postgres://app:app@localhost:5433/app_test?sslmode=disable mak
 
 ## Migrations
 
-The schema is defined by versioned SQL files in `database/migrations/`,
-applied with [golang-migrate](https://github.com/golang-migrate/migrate).
-The files are embedded in the binaries, so applying them needs neither the
-source tree nor an external tool.
+Le schéma est défini par des fichiers SQL versionnés dans
+`database/migrations/`, appliqués avec
+[golang-migrate](https://github.com/golang-migrate/migrate). Les fichiers
+sont embarqués dans les binaires : les appliquer ne demande ni les sources
+ni un outil externe.
 
 ```bash
-make migrate-up                                  # apply every pending migration
-make migrate-down                                # roll back the last migration
-make migrate-version                             # print the current version
-make migrate-create name=create_posts_table      # create an empty up/down pair
+make migrate-up                                  # applique toutes les migrations en attente
+make migrate-down                                # annule la dernière migration
+make migrate-version                             # affiche la version actuelle
+make migrate-create name=create_posts_table      # crée une paire up/down vide
 ```
 
-The same commands are available from the compiled binary, for example in a
-deployment job: `migrate up`, `migrate down [steps]`, `migrate version`,
-`migrate force <version>`. Asking `down` for more steps than were applied
-rolls every migration back and succeeds. Like the API, the command gives
-up after `DB_CONNECT_TIMEOUT` when the database is unreachable. It reads
-only `DATABASE_URL` and the `DB_*` variables, so a migration job needs no
-API secret.
+Les mêmes commandes existent dans le binaire compilé, par exemple pour un
+job de déploiement : `migrate up`, `migrate down [steps]`,
+`migrate version`, `migrate force <version>`. Demander à `down` plus
+d'étapes qu'il n'y en a d'appliquées annule toutes les migrations et
+réussit. Comme l'API, la commande abandonne après `DB_CONNECT_TIMEOUT`
+quand la base est injoignable. Elle ne lit que `DATABASE_URL` et les
+variables `DB_*` : un job de migration n'a besoin d'aucun secret de l'API.
 
-### Applying migrations at startup
+### Appliquer les migrations au démarrage
 
-With `DB_AUTO_MIGRATE=true`, the API applies pending migrations right after
-connecting and before serving requests. golang-migrate takes a PostgreSQL
-advisory lock, so several instances starting together apply each migration
-once. Leave it `false` when migrations run as a separate deployment step.
+Avec `DB_AUTO_MIGRATE=true`, l'API applique les migrations en attente juste
+après la connexion et avant de servir des requêtes. golang-migrate prend un
+verrou consultatif (advisory lock) PostgreSQL : plusieurs instances qui
+démarrent ensemble appliquent chaque migration une seule fois. Laissez
+`false` quand les migrations s'exécutent dans une étape de déploiement
+séparée.
 
-### A failed migration
+### Une migration qui échoue
 
-If a migration fails halfway, the version is marked *dirty* and nothing
-else runs. Fix the database by hand, then mark the version you reached:
+Si une migration échoue à mi-chemin, la version est marquée *dirty* et plus
+rien ne s'exécute. Réparez la base à la main, puis indiquez la version
+atteinte :
 
 ```bash
 go run ./cmd/migrate version     # 2 (dirty: ...)
-go run ./cmd/migrate force 1     # the last version that is fully applied
+go run ./cmd/migrate force 1     # la dernière version entièrement appliquée
 ```
 
-### Writing a migration
+### Écrire une migration
 
-- One change per migration, with a `down` file that reverses it exactly.
-- Never edit a migration that has been applied outside your machine; write
-  a new one.
-- Primary keys are `uuid` without a default: the application generates
-  UUID v7 values.
-- See the [conventions](conventions.md) for indexes and timestamps.
+- Un changement par migration, avec un fichier `down` qui l'annule
+  exactement.
+- Ne modifiez jamais une migration appliquée ailleurs que sur votre
+  machine ; écrivez-en une nouvelle.
+- Les clés primaires sont des `uuid` sans valeur par défaut : l'application
+  génère des valeurs UUID v7.
+- Voir les [conventions](conventions.md) pour les index et les
+  horodatages.
 
-## Schema
+## Schéma
 
 ### `users`
 
-| Column | Type | Notes |
+| Colonne | Type | Notes |
 | --- | --- | --- |
-| `id` | `uuid` | Primary key, generated by the application. |
-| `name` | `text` | Required. |
-| `email` | `text` | Required, unique, stored lowercase (`users_email_lowercase` check). |
-| `password_hash` | `text` | Required. |
-| `created_at` | `timestamptz` | Defaults to `now()`. |
-| `updated_at` | `timestamptz` | Defaults to `now()`. |
+| `id` | `uuid` | Clé primaire, générée par l'application. |
+| `name` | `text` | Obligatoire. |
+| `email` | `text` | Obligatoire, unique, stocké en minuscules (contrainte `users_email_lowercase`). |
+| `password_hash` | `text` | Obligatoire. |
+| `created_at` | `timestamptz` | Vaut `now()` par défaut. |
+| `updated_at` | `timestamptz` | Vaut `now()` par défaut. |
 
 ### `refresh_tokens`
 
-| Column | Type | Notes |
+| Colonne | Type | Notes |
 | --- | --- | --- |
-| `id` | `uuid` | Primary key, generated by the application. |
-| `user_id` | `uuid` | Required, references `users`. Deleting a user deletes their tokens. Indexed. |
-| `token_hash` | `text` | Required, unique. SHA-256 of the token; the token itself is never stored. |
-| `expires_at` | `timestamptz` | Required. |
-| `revoked_at` | `timestamptz` | Set when the token is revoked; empty while it is active. |
-| `replaced_by_id` | `uuid` | References the token that replaced this one when it was exchanged. Indexed. |
-| `created_at` | `timestamptz` | Defaults to `now()`. |
-| `updated_at` | `timestamptz` | Defaults to `now()`. |
+| `id` | `uuid` | Clé primaire, générée par l'application. |
+| `user_id` | `uuid` | Obligatoire, référence `users`. Supprimer un utilisateur supprime ses jetons. Indexée. |
+| `token_hash` | `text` | Obligatoire, unique. SHA-256 du jeton ; le jeton lui-même n'est jamais stocké. |
+| `expires_at` | `timestamptz` | Obligatoire. |
+| `revoked_at` | `timestamptz` | Renseignée à la révocation du jeton ; vide tant qu'il est actif. |
+| `replaced_by_id` | `uuid` | Référence le jeton qui a remplacé celui-ci lors de son échange. Indexée. |
+| `created_at` | `timestamptz` | Vaut `now()` par défaut. |
+| `updated_at` | `timestamptz` | Vaut `now()` par défaut. |
 
-Revoked and expired tokens are kept: a revoked token presented again is
-how a stolen token is detected. Nothing deletes them yet, so the table
-grows with every sign-in and every refresh. Purge rows whose `expires_at`
-has passed with a scheduled job when the table becomes large.
+Les jetons révoqués et expirés sont conservés : c'est en voyant revenir un
+jeton révoqué qu'on détecte un jeton volé. Rien ne les supprime pour
+l'instant : la table grossit à chaque connexion et à chaque
+rafraîchissement. Purgez les lignes dont `expires_at` est passée avec une
+tâche planifiée quand la table devient volumineuse.
 
-## Models and repositories
+## Modèles et repositories
 
-GORM models live in `internal/models`. Every model embeds `models.Base`,
-which holds the `id` and the timestamps; the id is a UUID v7 assigned just
-before the insert.
+Les modèles GORM vivent dans `internal/models`. Chaque modèle embarque
+`models.Base`, qui contient l'`id` et les horodatages ; l'identifiant est
+un UUID v7 attribué juste avant l'insertion.
 
-Queries live in `internal/repositories`, one repository per model. A
-repository translates database errors into its own sentinels, so services
-never depend on GORM:
+Les requêtes vivent dans `internal/repositories`, un repository par
+modèle. Un repository traduit les erreurs de la base en ses propres
+sentinelles, si bien que les services ne dépendent jamais de GORM :
 
-| Sentinel | Raised when |
+| Sentinelle | Levée quand |
 | --- | --- |
-| `repositories.ErrNotFound` | No record matches. |
-| `repositories.ErrDuplicate` | A unique index rejects the value, such as a taken email. |
-| `repositories.ErrInvalid` | A check constraint rejects the value. |
+| `repositories.ErrNotFound` | Aucun enregistrement ne correspond. |
+| `repositories.ErrDuplicate` | Un index unique rejette la valeur, comme un email déjà pris. |
+| `repositories.ErrInvalid` | Une contrainte de vérification rejette la valeur. |
 
-The user repository normalises emails (trimmed, lowercase) when it creates
-a user and when it looks one up by email, so the case of an email never
-matters.
+Le repository des utilisateurs normalise les emails (sans espaces autour,
+en minuscules) quand il crée un utilisateur et quand il en cherche un par
+email : la casse d'un email n'a jamais d'importance.
 
-The refresh token repository revokes a token with a conditional update
-that only matches an active token. When two requests exchange the same
-token at the same time, exactly one of them revokes it; the other learns
-that it lost.
+Le repository des jetons de rafraîchissement révoque un jeton avec une mise
+à jour conditionnelle qui ne touche qu'un jeton actif. Quand deux requêtes
+échangent le même jeton au même moment, une seule le révoque ; l'autre
+apprend qu'elle a perdu.
 
-Lists are paginated with the `repositories.Paginate(page, perPage)` scope.
-The page size defaults to 20 and is capped at 100.
+Les listes sont paginées avec le scope `repositories.Paginate(page, perPage)`.
+La taille de page vaut 20 par défaut et plafonne à 100.
 
-## Connection
+## Connexion
 
-At startup the API opens a connection pool and pings the database. If the
-ping does not succeed within `DB_CONNECT_TIMEOUT`, the API exits with an
-error instead of failing later on the first request.
+Au démarrage, l'API ouvre un pool de connexions et envoie un ping à la
+base. Si le ping n'aboutit pas avant `DB_CONNECT_TIMEOUT`, l'API s'arrête
+avec une erreur au lieu d'échouer plus tard à la première requête.
 
-The pool size and connection lifetimes are set by the `DB_*` variables in
-[configuration.md](configuration.md#database).
+La taille du pool et la durée de vie des connexions se règlent avec les
+variables `DB_*` de [configuration.md](configuration.md#base-de-données).
 
-## Query logging
+## Logs des requêtes
 
-Queries slower than `DB_SLOW_QUERY_THRESHOLD` and failed queries are logged
-as warnings. Logged queries show placeholders (`$1`, `$2`) instead of bound
-values, so emails, password hashes and tokens never reach the logs. A query
-that finds no record is not logged.
+Les requêtes plus lentes que `DB_SLOW_QUERY_THRESHOLD` et les requêtes en
+échec sont journalisées en avertissement. Les requêtes journalisées
+montrent des marqueurs (`$1`, `$2`) au lieu des valeurs liées : emails,
+hash de mots de passe et jetons n'arrivent jamais dans les logs. Une
+requête qui ne trouve aucun enregistrement n'est pas journalisée.
