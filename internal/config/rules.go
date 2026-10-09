@@ -22,6 +22,14 @@ func mustBeBetween(variable string, value, minimum, maximum int) error {
 	return fmt.Errorf("%s must be between %d and %d, got %d", variable, minimum, maximum, value)
 }
 
+func mustBeAtLeast(variable string, value, minimum int) error {
+	if value >= minimum {
+		return nil
+	}
+
+	return fmt.Errorf("%s must be at least %d, got %d", variable, minimum, value)
+}
+
 func mustBePositive(variable string, value time.Duration) error {
 	if value > 0 {
 		return nil

@@ -50,11 +50,13 @@ create a new top-level folder without the user's approval.
 | `internal/http/` | Controllers, middleware, requests, resources, `respond` (response helpers), and the fluent router wrapper over Echo. |
 | `internal/routes/` | The list of routes, registered through the router wrapper. |
 | `internal/models/` | GORM models. |
+| `internal/database/` | PostgreSQL connection pool. |
 | `internal/repositories/` | Database access, one repository per aggregate. |
 | `internal/services/` | Business logic, independent of HTTP. |
 | `internal/auth/` | Password hashing and token handling. |
 | `internal/testutil/` | Test helpers: test database, test application, HTTP requests. |
 | `database/migrations/` | Versioned SQL migrations. |
+| `database/init/` | SQL run once by the local PostgreSQL container; creates the test database. |
 | `docs/` | Documentation of the current state of the kit. |
 | `review/` | The code review produced by the `review` skill, updated in place. |
 | `.claude/skills/` | Skills for Claude Code; also readable as convention guides. |
@@ -67,7 +69,11 @@ Run `make` to list every command.
 | --- | --- |
 | `make run` | Run the API. |
 | `make build` | Compile the API into `bin/api`. |
-| `make test` | Run the test suite. |
+| `make docker-up` | Start PostgreSQL and wait until it is ready. |
+| `make docker-down` | Stop PostgreSQL, keeping its data. |
+| `make docker-reset` | Stop PostgreSQL and delete its data. |
+| `make docker-logs` | Follow the PostgreSQL logs. |
+| `make test` | Run the test suite. Needs `make docker-up` first. |
 | `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file. |
 | `make tidy` | Sync `go.mod` and `go.sum` with the imports. |
@@ -77,7 +83,8 @@ Run `make` to list every command.
 - **English everywhere.** Code, comments, documentation, commit messages and
   agent files are written in English.
 - **Configuration.** Read settings only through the typed configuration in
-  `internal/config`. Never call `os.Getenv` anywhere else.
+  `internal/config`. Never call `os.Getenv` anywhere else, except in
+  `internal/testutil`, which reads `TEST_DATABASE_URL`.
 - **Secrets.** Never read, print or copy real environment files (`.env`,
   `.env.local`, `.env.production`, ...), whatever the tool. Read
   `.env.example` to learn which variables exist. Never log passwords, tokens

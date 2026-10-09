@@ -13,29 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/francky-d/go-starter-kit/internal/app"
-	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/logging"
+	"github.com/francky-d/go-starter-kit/internal/testutil"
 )
-
-func testConfig() config.Config {
-	return config.Config{
-		App: config.App{Name: "test", Environment: config.EnvironmentTest},
-		HTTP: config.HTTP{
-			Port:              8080,
-			ReadHeaderTimeout: time.Second,
-			ReadTimeout:       time.Second,
-			WriteTimeout:      time.Second,
-			IdleTimeout:       time.Second,
-			ShutdownTimeout:   time.Second,
-		},
-		Log: config.Log{Format: config.LogFormatJSON},
-	}
-}
 
 func newApp(t *testing.T) *app.App {
 	t.Helper()
-	application, err := app.New(testConfig(), logging.Discard())
+	application, err := app.New(t.Context(), testutil.Config(), logging.Discard())
 	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, application.Close()) })
 
 	return application
 }
@@ -52,7 +38,16 @@ func TestHealth_AnswersOK(t *testing.T) {
 	response := get(t, newApp(t), http.MethodGet, "/health")
 
 	assert.Equal(t, http.StatusOK, response.Code)
-	assert.JSONEq(t, `{"data":{"status":"ok"}}`, response.Body.String())
+	assert.JSONEq(t, `{"data":{"status":"ok","database":"ok"}}`, response.Body.String())
+}
+
+func TestNew_FailsWhenTheDatabaseIsUnreachable(t *testing.T) {
+	cfg := testutil.Config()
+	cfg.Database.URL = "postgres://app:app@127.0.0.1:1/app?sslmode=disable"
+
+	_, err := app.New(t.Context(), cfg, logging.Discard())
+
+	assert.ErrorContains(t, err, "database: connect")
 }
 
 func TestUnknownRoute_AnswersTheErrorEnvelope(t *testing.T) {
@@ -84,7 +79,7 @@ func TestServe_StopsGracefullyWhenTheContextIsCancelled(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, response.Body.Close())
 	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.JSONEq(t, `{"data":{"status":"ok"}}`, string(body))
+	assert.JSONEq(t, `{"data":{"status":"ok","database":"ok"}}`, string(body))
 
 	cancel()
 

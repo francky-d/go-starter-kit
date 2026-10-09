@@ -14,6 +14,22 @@ run: ## Run the API (reads .env when present)
 build: ## Compile the API into bin/api
 	go build -trimpath -o bin/api ./cmd/api
 
+.PHONY: docker-up
+docker-up: ## Start PostgreSQL and wait until it is ready
+	docker compose up -d --wait
+
+.PHONY: docker-down
+docker-down: ## Stop PostgreSQL, keeping its data
+	docker compose down
+
+.PHONY: docker-reset
+docker-reset: ## Stop PostgreSQL and delete its data
+	docker compose down --volumes
+
+.PHONY: docker-logs
+docker-logs: ## Follow the PostgreSQL logs
+	docker compose logs --follow postgres
+
 .PHONY: test
 test: ## Run the test suite
 	go test ./...

@@ -57,6 +57,20 @@ Durations use Go syntax: `500ms`, `10s`, `5m`, `1h30m`.
 
 All timeouts must be positive.
 
+### Database
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | **required** | PostgreSQL connection URL, for example `postgres://app:app@localhost:5432/app?sslmode=disable`. |
+| `DB_CONNECT_TIMEOUT` | `5s` | Maximum time to reach the database at startup. |
+| `DB_MAX_OPEN_CONNECTIONS` | `25` | Maximum number of open connections (at least 1). |
+| `DB_MAX_IDLE_CONNECTIONS` | `25` | Maximum number of idle connections kept in the pool (0 to `DB_MAX_OPEN_CONNECTIONS`). |
+| `DB_CONNECTION_MAX_LIFETIME` | `30m` | A connection is replaced after this time. |
+| `DB_CONNECTION_MAX_IDLE_TIME` | `5m` | An idle connection is closed after this time. |
+| `DB_SLOW_QUERY_THRESHOLD` | `200ms` | Queries slower than this are logged as warnings. |
+
+Use `sslmode=require` (or stricter) in production.
+
 ### Logging
 
 | Variable | Default | Description |

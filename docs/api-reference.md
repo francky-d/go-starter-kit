@@ -70,17 +70,24 @@ Error messages are written to be safe for any client:
 
 | Method | Path | Authentication | Purpose |
 | --- | --- | --- | --- |
-| `GET` | `/health` | none | Report whether the application can serve requests. |
+| `GET` | `/health` | none | Report whether the application and its database can serve requests. |
 
 ### `GET /health`
 
-Answers `200` while the application is able to serve requests. Load
-balancers and container orchestrators use it as a liveness probe.
+Answers `200` when the application can reach its database within two
+seconds:
 
 ```bash
 curl -s http://localhost:8080/health
 ```
 
 ```json
-{ "data": { "status": "ok" } }
+{ "data": { "status": "ok", "database": "ok" } }
 ```
+
+Answers `503` with `{"message":"Service unavailable."}` otherwise; the cause
+is written to the server logs.
+
+Use it as a **readiness** probe, so traffic stops while the database is
+down. Do not use it as a liveness probe: restarting the API does not fix a
+database outage.

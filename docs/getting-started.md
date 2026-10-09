@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - Go 1.26 or later.
+- Docker with Compose v2, for the local PostgreSQL database.
 - `make`.
 
 ## First steps
@@ -11,8 +12,12 @@
 git clone https://github.com/francky-d/go-starter-kit.git
 cd go-starter-kit
 cp .env.example .env
+make docker-up
 make test
 ```
+
+`make docker-up` starts PostgreSQL 17 and waits until it accepts
+connections. See [database.md](database.md) for details.
 
 ## Run the API
 
@@ -25,8 +30,11 @@ answers:
 
 ```bash
 curl -s http://localhost:8080/health
-# {"data":{"status":"ok"}}
+# {"data":{"status":"ok","database":"ok"}}
 ```
+
+The API refuses to start if the database is unreachable within
+`DB_CONNECT_TIMEOUT`.
 
 Logs are written to standard output. Stop the server with `Ctrl+C`: it
 finishes the requests in flight before exiting.
@@ -39,7 +47,11 @@ Run `make` to list every command.
 | --- | --- |
 | `make run` | Run the API with `go run`. |
 | `make build` | Compile the API into `bin/api`. |
-| `make test` | Run the test suite. |
+| `make docker-up` | Start PostgreSQL and wait until it is ready. |
+| `make docker-down` | Stop PostgreSQL, keeping its data. |
+| `make docker-reset` | Stop PostgreSQL and delete its data. |
+| `make docker-logs` | Follow the PostgreSQL logs. |
+| `make test` | Run the test suite. PostgreSQL must be running. |
 | `make lint` | Check formatting and `go.mod`, then run `go vet` and `staticcheck`. |
 | `make fmt` | Format every Go file with `gofmt`. |
 | `make tidy` | Sync `go.mod` and `go.sum` with the imports. |

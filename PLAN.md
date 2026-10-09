@@ -38,7 +38,7 @@ task ships as exactly one atomic commit.
 
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
-| 10 | PostgreSQL connection and Docker Compose service | `feat(database): add Postgres connection and docker compose service` | todo |
+| 10 | PostgreSQL connection and Docker Compose service | `feat(database): add Postgres connection and docker compose service` | done |
 | 11 | Embedded migration runner and users table | `feat(database): add embedded migration runner and users table` | todo |
 
 ## Phase 4 - HTTP helpers

@@ -1,0 +1,27 @@
+name: go-starter-kit
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      # Bound to localhost only: these credentials must not be reachable
+      # from the network the machine is on.
+      - "127.0.0.1:${DB_FORWARD_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP, not the Unix socket: the temporary server that runs the init
+      # scripts only listens on the socket, so this waits until they are done.
+      test: ["CMD-SHELL", "pg_isready -h localhost -U app -d app"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

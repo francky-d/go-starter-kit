@@ -151,7 +151,8 @@ The kit applies SOLID the Go way.
 
 - Configuration is read once, at startup, into the typed struct of
   `internal/config`. Pass the part a component needs to its constructor.
-- Never call `os.Getenv` outside `internal/config`.
+- Never call `os.Getenv` outside `internal/config`. The one exception is
+  `internal/testutil`, which reads `TEST_DATABASE_URL` for tests.
 - A new variable gets a default when one is safe, the `required` option
   (`env:"NAME,required"`) when not,
   a line in `.env.example`, and a row in `docs/configuration.md`.

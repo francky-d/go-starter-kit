@@ -19,14 +19,21 @@ var knownVariables = []string{
 	"HTTP_PORT", "HTTP_READ_HEADER_TIMEOUT", "HTTP_READ_TIMEOUT",
 	"HTTP_WRITE_TIMEOUT", "HTTP_IDLE_TIMEOUT", "HTTP_SHUTDOWN_TIMEOUT",
 	"LOG_LEVEL", "LOG_FORMAT",
+	"DATABASE_URL", "DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNECTIONS", "DB_MAX_IDLE_CONNECTIONS",
+	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
 }
 
+const databaseURL = "postgres://app:app@localhost:5432/app?sslmode=disable"
+
+// clearEnvironment unsets every known variable, then sets the only
+// required one so each test starts from a valid configuration.
 func clearEnvironment(t *testing.T) {
 	t.Helper()
 	for _, name := range knownVariables {
 		t.Setenv(name, "") // registers the original value for restoration
 		require.NoError(t, os.Unsetenv(name))
 	}
+	t.Setenv("DATABASE_URL", databaseURL)
 }
 
 func TestFromEnvironment_AppliesDefaults(t *testing.T) {
@@ -45,6 +52,23 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, 10*time.Second, cfg.HTTP.ShutdownTimeout)
 	assert.Equal(t, slog.LevelInfo, cfg.Log.Level)
 	assert.Equal(t, config.LogFormatJSON, cfg.Log.Format)
+	assert.Equal(t, databaseURL, cfg.Database.URL)
+	assert.Equal(t, 5*time.Second, cfg.Database.ConnectTimeout)
+	assert.Equal(t, 25, cfg.Database.MaxOpenConnections)
+	assert.Equal(t, 25, cfg.Database.MaxIdleConnections)
+	assert.Equal(t, 30*time.Minute, cfg.Database.ConnectionMaxLifetime)
+	assert.Equal(t, 5*time.Minute, cfg.Database.ConnectionMaxIdleTime)
+	assert.Equal(t, 200*time.Millisecond, cfg.Database.SlowQueryThreshold)
+}
+
+func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
+	clearEnvironment(t)
+	require.NoError(t, os.Unsetenv("DATABASE_URL"))
+
+	_, err := config.FromEnvironment()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "DATABASE_URL")
 }
 
 func TestFromEnvironment_ReadsVariables(t *testing.T) {
@@ -80,6 +104,9 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"negative timeout", "HTTP_READ_TIMEOUT", "-1s", "HTTP_READ_TIMEOUT"},
 		{"unknown log level", "LOG_LEVEL", "verbose", `"verbose"`},
 		{"unknown log format", "LOG_FORMAT", "xml", "LOG_FORMAT"},
+		{"no open connections", "DB_MAX_OPEN_CONNECTIONS", "0", "DB_MAX_OPEN_CONNECTIONS"},
+		{"more idle than open connections", "DB_MAX_IDLE_CONNECTIONS", "26", "DB_MAX_IDLE_CONNECTIONS"},
+		{"zero connect timeout", "DB_CONNECT_TIMEOUT", "0s", "DB_CONNECT_TIMEOUT"},
 	}
 
 	for _, tc := range cases {

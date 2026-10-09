@@ -10,27 +10,51 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 
 	"github.com/francky-d/go-starter-kit/internal/config"
+	"github.com/francky-d/go-starter-kit/internal/database"
 	"github.com/francky-d/go-starter-kit/internal/http/controllers"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
 	"github.com/francky-d/go-starter-kit/internal/routes"
 )
 
 type App struct {
-	config config.Config
-	log    *slog.Logger
-	echo   *echo.Echo
+	config   config.Config
+	log      *slog.Logger
+	database *gorm.DB
+	echo     *echo.Echo
 }
 
-func New(cfg config.Config, log *slog.Logger) (*App, error) {
-	e := newEcho(log)
+func New(ctx context.Context, cfg config.Config, log *slog.Logger) (*App, error) {
+	db, err := database.Connect(ctx, cfg.Database, log)
+	if err != nil {
+		return nil, err
+	}
 
-	routes.Register(e, routes.Dependencies{
-		Health: controllers.NewHealthController(),
+	application := &App{config: cfg, log: log, database: db, echo: newEcho(log)}
+	if err := application.registerRoutes(); err != nil {
+		return nil, errors.Join(err, application.Close())
+	}
+
+	return application, nil
+}
+
+func (a *App) Close() error {
+	return database.Close(a.database)
+}
+
+func (a *App) registerRoutes() error {
+	pool, err := a.database.DB()
+	if err != nil {
+		return fmt.Errorf("app: %w", err)
+	}
+
+	routes.Register(a.echo, routes.Dependencies{
+		Health: controllers.NewHealthController(pool),
 	})
 
-	return &App{config: cfg, log: log, echo: e}, nil
+	return nil
 }
 
 func newEcho(log *slog.Logger) *echo.Echo {

@@ -25,9 +25,10 @@ const (
 )
 
 type Config struct {
-	App  App  `envPrefix:"APP_"`
-	HTTP HTTP `envPrefix:"HTTP_"`
-	Log  Log  `envPrefix:"LOG_"`
+	App      App  `envPrefix:"APP_"`
+	HTTP     HTTP `envPrefix:"HTTP_"`
+	Log      Log  `envPrefix:"LOG_"`
+	Database Database
 }
 
 type App struct {
@@ -47,6 +48,16 @@ type HTTP struct {
 type Log struct {
 	Level  slog.Level `env:"LEVEL" envDefault:"info"`
 	Format string     `env:"FORMAT" envDefault:"json"`
+}
+
+type Database struct {
+	URL                   string        `env:"DATABASE_URL,required"`
+	ConnectTimeout        time.Duration `env:"DB_CONNECT_TIMEOUT" envDefault:"5s"`
+	MaxOpenConnections    int           `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"25"`
+	MaxIdleConnections    int           `env:"DB_MAX_IDLE_CONNECTIONS" envDefault:"25"`
+	ConnectionMaxLifetime time.Duration `env:"DB_CONNECTION_MAX_LIFETIME" envDefault:"30m"`
+	ConnectionMaxIdleTime time.Duration `env:"DB_CONNECTION_MAX_IDLE_TIME" envDefault:"5m"`
+	SlowQueryThreshold    time.Duration `env:"DB_SLOW_QUERY_THRESHOLD" envDefault:"200ms"`
 }
 
 // Load reads the optional .env file, then the environment. A variable
@@ -79,6 +90,7 @@ func (c Config) Validate() error {
 		c.App.validate(),
 		c.HTTP.validate(),
 		c.Log.validate(),
+		c.Database.validate(),
 	)
 	if problems != nil {
 		return fmt.Errorf("config: invalid configuration: %w", problems)
@@ -108,4 +120,15 @@ func (h HTTP) validate() error {
 
 func (l Log) validate() error {
 	return mustBeOneOf("LOG_FORMAT", l.Format, LogFormatJSON, LogFormatText)
+}
+
+func (d Database) validate() error {
+	return errors.Join(
+		mustBeAtLeast("DB_MAX_OPEN_CONNECTIONS", d.MaxOpenConnections, 1),
+		mustBeBetween("DB_MAX_IDLE_CONNECTIONS", d.MaxIdleConnections, 0, d.MaxOpenConnections),
+		mustBePositive("DB_CONNECT_TIMEOUT", d.ConnectTimeout),
+		mustBePositive("DB_CONNECTION_MAX_LIFETIME", d.ConnectionMaxLifetime),
+		mustBePositive("DB_CONNECTION_MAX_IDLE_TIME", d.ConnectionMaxIdleTime),
+		mustBePositive("DB_SLOW_QUERY_THRESHOLD", d.SlowQueryThreshold),
+	)
 }
