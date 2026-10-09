@@ -17,6 +17,8 @@ through the code, and where each responsibility lives.
 | `internal/routes` | Declares every route in one place. |
 | `internal/http/middleware` | Middleware: the baseline stack every request goes through, and the client IP policy. |
 | `internal/http/router` | Fluent wrapper over Echo routing: groups, middleware and routes declared as a chain. |
+| `internal/http/requests` | Request structs with their validation rules, and `Bind`, which turns bad input into a `400`, `415` or `422`. |
+| `internal/http/resources` | Shapes models into the JSON clients receive; a model is never serialised directly, so a new column never leaks by accident. |
 | `internal/http/controllers` | HTTP handlers. A controller returns a response or an error, never an error body. |
 | `internal/http/respond` | Success envelopes and the central error handler. |
 | `internal/models` | GORM models. Every model embeds `Base`: UUID v7 id and timestamps. |
@@ -24,10 +26,10 @@ through the code, and where each responsibility lives.
 | `internal/services` | Business rules, such as registration, login and refresh token rotation. Returns application errors and knows nothing about HTTP. |
 | `internal/auth` | Authentication primitives: password hashing, access tokens and refresh tokens. Knows nothing about HTTP or the database. |
 | `internal/apperror` | Errors that carry an HTTP status and a client-safe message. |
-| `internal/testutil` | Test helpers: test configuration, migrated test database emptied around each test. |
+| `internal/testutil` | Test helpers: test configuration, migrated test database emptied around each test, in-memory HTTP client. |
 
 Dependencies point inwards: `cmd/api` depends on `internal/app`, which
-depends on everything else. Nothing depends on `internal/app`.
+depends on everything else. No production package depends on `internal/app`; only tests import it.
 
 ## Startup and shutdown
 

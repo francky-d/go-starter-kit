@@ -30,6 +30,9 @@ func Config() config.Config {
 			JWTIssuer:            "go-starter-kit",
 			AccessTokenLifetime:  15 * time.Minute,
 			RefreshTokenLifetime: 24 * time.Hour,
+			// High enough that only the rate limit tests reach them.
+			CredentialsRateLimitPerMinute: 10000,
+			RefreshRateLimitPerMinute:     10000,
 		},
 	}
 }

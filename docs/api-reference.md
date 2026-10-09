@@ -58,14 +58,14 @@ validation failures and maps each invalid field to its messages:
 | Status | Message | When |
 | --- | --- | --- |
 | 400 | `Malformed request body.` | The body is not valid JSON, or a value has the wrong type. |
-| 401 | `Unauthenticated.` | Authentication is missing or invalid. |
+| 401 | `Unauthenticated.` | Authentication is missing or invalid. Login answers `Invalid credentials.` instead. |
 | 403 | `This action is forbidden.` | The caller is authenticated but not allowed. |
 | 404 | `Resource not found.` | The route or the record does not exist, or the record belongs to someone else. |
 | 409 | depends on the error | The request conflicts with the current state. |
 | 413 | `Request Entity Too Large.` | The body is larger than `HTTP_BODY_LIMIT`. |
 | 415 | `Unsupported Media Type.` | The body is not sent as `application/json`. |
 | 422 | `The given data was invalid.` | Validation failed; see `errors`. |
-| 429 | `Too many requests.` | A rate limit was hit. |
+| 429 | `Too many requests.` | A rate limit was hit. The `Retry-After` header gives the seconds to wait. |
 | 500 | `Internal server error.` | An unexpected error occurred. |
 | 503 | `Service unavailable.` | A dependency is down, or the request ran longer than `HTTP_REQUEST_TIMEOUT`. |
 
@@ -111,6 +111,16 @@ Error messages are written to be safe for any client:
 | Method | Path | Authentication | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/health` | none | Report whether the application and its database can serve requests. |
+| `POST` | `/api/v1/auth/register` | none, rate limited | Create an account and start a session. |
+| `POST` | `/api/v1/auth/login` | none, rate limited | Start a session with an email and a password. |
+| `POST` | `/api/v1/auth/refresh` | none, rate limited | Exchange a refresh token for a new session. |
+| `POST` | `/api/v1/auth/logout` | none, rate limited | Revoke a refresh token. |
+
+Register and login together accept `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE`
+requests per minute from each client IP; refresh and logout together
+accept `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE`. Beyond that they answer `429`.
+See [authentication.md](authentication.md) for how sessions and tokens
+work.
 
 ### `GET /health`
 
@@ -131,3 +141,97 @@ is written to the server logs.
 Use it as a **readiness** probe, so traffic stops while the database is
 down. Do not use it as a liveness probe: restarting the API does not fix a
 database outage.
+
+### Sessions
+
+Register, login and refresh answer with a session:
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "0192f1c4-7b7e-7a3e-9a51-3f1f2f1e8c11",
+      "name": "Ada Lovelace",
+      "email": "ada@example.com",
+      "created_at": "2026-10-09T12:00:00Z"
+    },
+    "token_type": "Bearer",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expires_in": 900,
+    "refresh_token": "kq3V0n0t2uJx3ZbJ0yq6Q3pW8m1sT4cV5bN7aL9dE2f",
+    "refresh_token_expires_at": "2026-11-08T12:00:00Z"
+  }
+}
+```
+
+| Field | Content |
+| --- | --- |
+| `access_token` | Send it as `Authorization: Bearer <access_token>` to authenticated routes. |
+| `expires_in` | Seconds until the access token expires. |
+| `refresh_token` | Exchange it at `/api/v1/auth/refresh` before `refresh_token_expires_at`. Each refresh token works once. |
+
+Store the refresh token as carefully as a password: whoever holds it can
+open a session.
+
+### `POST /api/v1/auth/register`
+
+```bash
+curl -s http://localhost:8080/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Ada Lovelace","email":"ada@example.com","password":"correct horse battery staple"}'
+```
+
+| Field | Rules |
+| --- | --- |
+| `name` | Required, at most 100 characters. |
+| `email` | Required, a valid email, at most 254 characters. Stored in lowercase. |
+| `password` | Required, 8 to 72 characters, and at most 72 bytes. |
+
+| Status | When |
+| --- | --- |
+| `201` | The account was created; the body is a session. |
+| `409` | The email already has an account: `Unable to register with the provided details.` |
+| `422` | A field is invalid. |
+
+### `POST /api/v1/auth/login`
+
+```bash
+curl -s http://localhost:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"ada@example.com","password":"correct horse battery staple"}'
+```
+
+| Status | When |
+| --- | --- |
+| `200` | The body is a new session. |
+| `401` | `Invalid credentials.`, whether the email is unknown or the password is wrong. |
+| `422` | `email` or `password` is missing, or `email` is longer than 254 characters. |
+
+### `POST /api/v1/auth/refresh`
+
+```bash
+curl -s http://localhost:8080/api/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"<refresh_token>"}'
+```
+
+| Status | When |
+| --- | --- |
+| `200` | The body is a new session; the refresh token sent is now revoked. |
+| `401` | `Unauthenticated.`: the token is unknown, expired or revoked. A token that was already exchanged also revokes every session of its user. |
+| `422` | `refresh_token` is missing or longer than 128 characters. |
+
+### `POST /api/v1/auth/logout`
+
+```bash
+curl -s -i http://localhost:8080/api/v1/auth/logout \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"<refresh_token>"}'
+```
+
+| Status | When |
+| --- | --- |
+| `204` | The refresh token is revoked. An unknown or already revoked token gets the same answer. |
+| `422` | `refresh_token` is missing or longer than 128 characters. |
+
+The access token stays valid until it expires; delete it on the client.

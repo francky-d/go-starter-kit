@@ -78,6 +78,10 @@ type Auth struct {
 	JWTIssuer            string        `env:"JWT_ISSUER" envDefault:"go-starter-kit"`
 	AccessTokenLifetime  time.Duration `env:"ACCESS_TOKEN_LIFETIME" envDefault:"15m"`
 	RefreshTokenLifetime time.Duration `env:"REFRESH_TOKEN_LIFETIME" envDefault:"720h"`
+	// Register and login take credentials an attacker can guess, so they get
+	// a tight limit; refresh and logout are routine traffic and get their own.
+	CredentialsRateLimitPerMinute int `env:"AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE" envDefault:"10"`
+	RefreshRateLimitPerMinute     int `env:"AUTH_REFRESH_RATE_LIMIT_PER_MINUTE" envDefault:"60"`
 }
 
 // MinJWTSecretBytes matches the HS256 key size: a shorter secret weakens the
@@ -205,5 +209,7 @@ func (a Auth) validate() error {
 		mustNotBeBlank("JWT_ISSUER", a.JWTIssuer),
 		mustBePositive("ACCESS_TOKEN_LIFETIME", a.AccessTokenLifetime),
 		mustExceed("REFRESH_TOKEN_LIFETIME", a.RefreshTokenLifetime, "ACCESS_TOKEN_LIFETIME", a.AccessTokenLifetime),
+		mustBeAtLeast("AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE", a.CredentialsRateLimitPerMinute, 1),
+		mustBeAtLeast("AUTH_REFRESH_RATE_LIMIT_PER_MINUTE", a.RefreshRateLimitPerMinute, 1),
 	)
 }

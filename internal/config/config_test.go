@@ -25,6 +25,7 @@ var knownVariables = []string{
 	"DB_CONNECTION_MAX_LIFETIME", "DB_CONNECTION_MAX_IDLE_TIME", "DB_SLOW_QUERY_THRESHOLD",
 	"DB_AUTO_MIGRATE",
 	"BCRYPT_COST", "JWT_SECRET", "JWT_ISSUER", "ACCESS_TOKEN_LIFETIME", "REFRESH_TOKEN_LIFETIME",
+	"AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE", "AUTH_REFRESH_RATE_LIMIT_PER_MINUTE",
 }
 
 const (
@@ -77,6 +78,8 @@ func TestFromEnvironment_AppliesDefaults(t *testing.T) {
 	assert.Equal(t, "go-starter-kit", cfg.Auth.JWTIssuer)
 	assert.Equal(t, 15*time.Minute, cfg.Auth.AccessTokenLifetime)
 	assert.Equal(t, 30*24*time.Hour, cfg.Auth.RefreshTokenLifetime)
+	assert.Equal(t, 10, cfg.Auth.CredentialsRateLimitPerMinute)
+	assert.Equal(t, 60, cfg.Auth.RefreshRateLimitPerMinute)
 }
 
 func TestFromEnvironment_RequiresDatabaseURL(t *testing.T) {
@@ -152,6 +155,8 @@ func TestFromEnvironment_RejectsInvalidValues(t *testing.T) {
 		{"blank JWT issuer", "JWT_ISSUER", " ", "JWT_ISSUER"},
 		{"zero access token lifetime", "ACCESS_TOKEN_LIFETIME", "0s", "ACCESS_TOKEN_LIFETIME"},
 		{"refresh token outlived by access token", "REFRESH_TOKEN_LIFETIME", "10m", "REFRESH_TOKEN_LIFETIME"},
+		{"no login allowed", "AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE", "0", "AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE"},
+		{"no refresh allowed", "AUTH_REFRESH_RATE_LIMIT_PER_MINUTE", "0", "AUTH_REFRESH_RATE_LIMIT_PER_MINUTE"},
 	}
 
 	for _, tc := range cases {

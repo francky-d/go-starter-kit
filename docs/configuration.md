@@ -106,6 +106,8 @@ Use `sslmode=require` (or stricter) in production.
 | `JWT_SECRET` | none, required | Key that signs the access tokens, at least 32 bytes and random. Generate it with `openssl rand -hex 32` and keep all 64 hex characters; use a different one per environment and never commit it. Changing it invalidates every access token already issued. |
 | `JWT_ISSUER` | `go-starter-kit` | Written into every access token; a token from another issuer is refused. |
 | `ACCESS_TOKEN_LIFETIME` | `15m` | How long an access token stays valid. Keep it short: an access token cannot be revoked before it expires. |
+| `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | Requests per minute each client IP may send to register and login together. See [authentication.md](authentication.md#rate-limiting). |
+| `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Requests per minute each client IP may send to refresh and logout together. |
 | `REFRESH_TOKEN_LIFETIME` | `720h` | How long a refresh token stays valid (30 days by default). Must be longer than `ACCESS_TOKEN_LIFETIME`. Go durations have no day unit: write days in hours. |
 
 ### Logging

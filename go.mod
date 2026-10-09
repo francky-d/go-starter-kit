@@ -14,6 +14,7 @@ require (
 	github.com/labstack/gommon v0.5.0
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/crypto v0.57.0
+	golang.org/x/time v0.15.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
@@ -41,7 +42,6 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	honnef.co/go/tools v0.8.1 // indirect
 )

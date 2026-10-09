@@ -14,7 +14,6 @@ import (
 
 	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/database"
-	"github.com/francky-d/go-starter-kit/internal/http/controllers"
 	"github.com/francky-d/go-starter-kit/internal/http/middleware"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
 	"github.com/francky-d/go-starter-kit/internal/http/router"
@@ -64,14 +63,12 @@ func (a *App) Close() error {
 }
 
 func (a *App) registerRoutes() error {
-	pool, err := a.database.DB()
+	dependencies, err := a.dependencies()
 	if err != nil {
 		return fmt.Errorf("app: %w", err)
 	}
 
-	routes.Register(router.New(a.echo), routes.Dependencies{
-		Health: controllers.NewHealthController(pool),
-	})
+	routes.Register(router.New(a.echo), dependencies)
 
 	return nil
 }

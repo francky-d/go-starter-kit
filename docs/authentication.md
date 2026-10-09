@@ -99,7 +99,8 @@ the same account.
 An email that already has an account is refused with
 `Unable to register with the provided details.`. This message does reveal
 that the email is taken: hiding it would need an email verification flow,
-which the kit does not have.
+which the kit does not have. The rate limit on the authentication routes
+slows down an attacker who tests emails this way.
 
 ### Logging in
 
@@ -141,3 +142,29 @@ twice is not an error.
 The access token of the session stays valid until it expires, at most
 `ACCESS_TOKEN_LIFETIME`. Clients should delete both tokens when they log
 out.
+
+## Rate limiting
+
+The authentication routes are limited per client IP, with two separate
+budgets:
+
+| Routes | Variable | Default | Why |
+| --- | --- | --- | --- |
+| register, login | `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | They take credentials: a tight limit slows down password guessing and email enumeration. |
+| refresh, logout | `AUTH_REFRESH_RATE_LIMIT_PER_MINUTE` | `60` | Clients call them in the normal course of a session; a refresh token cannot be guessed, so the limit only protects the database. |
+
+Each limit allows bursts of its own size. Beyond it, a route answers `429`
+with `Retry-After: 60`. Separate budgets mean that routine refreshes never
+prevent a login, and a client that reached the login limit can still log
+out.
+
+- The counters live in the memory of each instance. With several
+  instances, a client can make the limit once per instance; put a shared
+  limit in the load balancer or the API gateway if that matters.
+- The client IP comes from the connection, or from `X-Forwarded-For` when
+  `HTTP_TRUST_PROXY` is enabled (see
+  [configuration.md](configuration.md#http-server)). Behind a proxy without
+  that setting, every client shares the proxy's IP and the same limit.
+- Users behind one NAT, such as an office network, share both limits.
+  Raise the refresh limit first if legitimate users hit it; raising the
+  credentials limit also helps an attacker.

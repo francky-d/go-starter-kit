@@ -55,7 +55,7 @@ create a new top-level folder without the user's approval.
 | `internal/repositories/` | Database access, one repository per aggregate. |
 | `internal/services/` | Business logic, independent of HTTP. |
 | `internal/auth/` | Password hashing and token handling. |
-| `internal/testutil/` | Test helpers: test database, test application, HTTP requests. |
+| `internal/testutil/` | Test helpers: test configuration, test database, in-memory HTTP client. |
 | `database/migrations/` | Versioned SQL migrations, embedded in the binaries. |
 | `database/init/` | SQL run once by the local PostgreSQL container; creates the test database. |
 | `docs/` | Documentation of the current state of the kit. |
