@@ -103,7 +103,8 @@ The kit applies SOLID the Go way.
 - One struct per endpoint input, in `internal/http/requests`, with `json`
   and `validate` tags (`github.com/go-playground/validator/v10`).
 - Controllers call `requests.Bind(c, &input)`. It binds, validates, and
-  returns an `apperror` the error handler turns into 400 or 422.
+  returns an `apperror` the error handler turns into 400 (malformed body),
+  415 (not JSON) or 422 (invalid fields).
 - Validation messages are keyed by the JSON field name.
 - Limit every string: `max=` on free text, `max=72` on passwords.
 - bcrypt rejects passwords longer than 72 **bytes**, while `max=72` counts
