@@ -14,7 +14,9 @@ The code is written to **read like plain English**: fluent chaining where Go
 allows it (routes, responses, queries, validation), descriptive names
 everywhere, and explicit constructor injection instead of hidden magic. The
 result must remain idiomatic Go: errors are values, `context.Context` flows
-through every call that does I/O, and nothing panics on a request path.
+through every call that does I/O, and nothing panics on a request path
+(the one exception is `middleware.CurrentUserID` on a route registered
+without `Authenticated`: a wiring bug, not a client error).
 
 ## Stack
 

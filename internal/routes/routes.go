@@ -10,6 +10,8 @@ import (
 type Dependencies struct {
 	Health               *controllers.HealthController
 	Auth                 *controllers.AuthController
+	Users                *controllers.UserController
+	Authenticated        echo.MiddlewareFunc
 	CredentialsRateLimit echo.MiddlewareFunc
 	RefreshRateLimit     echo.MiddlewareFunc
 }
@@ -28,4 +30,7 @@ func Register(r *router.Router, d Dependencies) {
 	authentication.Middleware(d.RefreshRateLimit).
 		Post("/refresh", d.Auth.Refresh).
 		Post("/logout", d.Auth.Logout)
+
+	api.Middleware(d.Authenticated).
+		Get("/me", d.Users.Me)
 }

@@ -19,7 +19,9 @@ return respond.Created(c, resources.NewUser(user))
 ```
 
 Readability never wins over idiomatic Go: errors are values, `ctx` flows
-through every call that does I/O, and nothing panics on a request path.
+through every call that does I/O, and nothing panics on a request path
+(the one exception is `middleware.CurrentUserID` on a route registered
+without `Authenticated`: a wiring bug, not a client error).
 
 Some packages named below are added as the kit grows. When one does not
 exist yet, create it following these rules. When a sibling file already

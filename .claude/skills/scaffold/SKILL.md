@@ -155,16 +155,17 @@ func (pc *ProjectController) Create(c echo.Context) error {
 
 1. Build the repository, service and controller in the application wiring
    (`internal/app`) with their constructors.
-2. Add the controller to the route dependencies.
-3. Register the routes behind the authentication middleware:
+2. Add the controller to the route dependencies (`routes.Dependencies`).
+3. Register the routes behind the authentication middleware, in
+   `internal/routes/routes.go`:
 
 ```go
-api.Group("/projects").Middleware(authenticated).
-    Get("", projects.List).
-    Post("", projects.Create).
-    Get("/:id", projects.Show).
-    Patch("/:id", projects.Update).
-    Delete("/:id", projects.Delete)
+api.Group("/projects").Middleware(d.Authenticated).
+    Get("", d.Projects.List).
+    Post("", d.Projects.Create).
+    Get("/:id", d.Projects.Show).
+    Patch("/:id", d.Projects.Update).
+    Delete("/:id", d.Projects.Delete)
 ```
 
 ## Step 9 - HTTP tests

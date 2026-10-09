@@ -15,7 +15,7 @@ through the code, and where each responsibility lives.
 | `internal/app` | Wires every dependency with explicit constructors and runs the HTTP server. |
 | `internal/database` | Opens the PostgreSQL connection pool used through GORM, and runs the embedded migrations. |
 | `internal/routes` | Declares every route in one place. |
-| `internal/http/middleware` | Middleware: the baseline stack every request goes through, and the client IP policy. |
+| `internal/http/middleware` | Middleware: the baseline stack every request goes through, the client IP policy, bearer authentication and rate limiting. |
 | `internal/http/router` | Fluent wrapper over Echo routing: groups, middleware and routes declared as a chain. |
 | `internal/http/requests` | Request structs with their validation rules, and `Bind`, which turns bad input into a `400`, `415` or `422`. |
 | `internal/http/resources` | Shapes models into the JSON clients receive; a model is never serialised directly, so a new column never leaks by accident. |
@@ -65,12 +65,21 @@ wrapper, so the routing table reads as a list:
 ```go
 api := r.Group("/api/v1")
 
-api.Group("/auth").Middleware(rateLimit).
-    Post("/register", auth.Register).
-    Post("/login", auth.Login)
+authentication := api.Group("/auth")
 
-api.Middleware(authenticated).Get("/me", users.Me)
+authentication.Middleware(d.CredentialsRateLimit).
+    Post("/register", d.Auth.Register).
+    Post("/login", d.Auth.Login)
+
+authentication.Middleware(d.RefreshRateLimit).
+    Post("/refresh", d.Auth.Refresh).
+    Post("/logout", d.Auth.Logout)
+
+api.Middleware(d.Authenticated).
+    Get("/me", d.Users.Me)
 ```
+
+`d` holds the controllers and middleware built in `internal/app`.
 
 - `Group(prefix, middleware...)` and `Middleware(middleware...)` return a
   new router and leave the receiver unchanged, so the order in which groups

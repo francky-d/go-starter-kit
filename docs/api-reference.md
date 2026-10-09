@@ -115,6 +115,7 @@ Error messages are written to be safe for any client:
 | `POST` | `/api/v1/auth/login` | none, rate limited | Start a session with an email and a password. |
 | `POST` | `/api/v1/auth/refresh` | none, rate limited | Exchange a refresh token for a new session. |
 | `POST` | `/api/v1/auth/logout` | none, rate limited | Revoke a refresh token. |
+| `GET` | `/api/v1/me` | bearer access token | Return the authenticated user. |
 
 Register and login together accept `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE`
 requests per minute from each client IP; refresh and logout together
@@ -235,3 +236,32 @@ curl -s -i http://localhost:8080/api/v1/auth/logout \
 | `422` | `refresh_token` is missing or longer than 128 characters. |
 
 The access token stays valid until it expires; delete it on the client.
+
+### `GET /api/v1/me`
+
+Returns the user the access token was issued to.
+
+```bash
+curl -s http://localhost:8080/api/v1/me \
+  -H 'Authorization: Bearer <access_token>'
+```
+
+```json
+{
+  "data": {
+    "id": "0192f1c4-7b7e-7a3e-9a51-3f1f2f1e8c11",
+    "name": "Ada Lovelace",
+    "email": "ada@example.com",
+    "created_at": "2026-10-09T12:00:00Z"
+  }
+}
+```
+
+| Status | When |
+| --- | --- |
+| `200` | The body is the user. |
+| `401` | `Unauthenticated.`: the token is missing, invalid or expired, or its user no longer exists. |
+
+On a `401`, the `WWW-Authenticate` header says whether to refresh the
+session or to sign in; see
+[authentication.md](authentication.md#authenticating-requests).

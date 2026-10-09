@@ -17,7 +17,10 @@ func (a *App) dependencies() (routes.Dependencies, error) {
 		return routes.Dependencies{}, err
 	}
 
-	authService, err := a.authService()
+	users := repositories.NewUserRepository(a.database)
+	accessTokens := auth.NewTokenIssuer(a.config.Auth)
+
+	authService, err := a.authService(users, accessTokens)
 	if err != nil {
 		return routes.Dependencies{}, err
 	}
@@ -25,12 +28,14 @@ func (a *App) dependencies() (routes.Dependencies, error) {
 	return routes.Dependencies{
 		Health:               controllers.NewHealthController(pool),
 		Auth:                 controllers.NewAuthController(authService),
+		Users:                controllers.NewUserController(services.NewUserService(users)),
+		Authenticated:        middleware.Authenticated(accessTokens),
 		CredentialsRateLimit: middleware.RateLimit(a.config.Auth.CredentialsRateLimitPerMinute),
 		RefreshRateLimit:     middleware.RateLimit(a.config.Auth.RefreshRateLimitPerMinute),
 	}, nil
 }
 
-func (a *App) authService() (*services.AuthService, error) {
+func (a *App) authService(users *repositories.UserRepository, accessTokens *auth.TokenIssuer) (*services.AuthService, error) {
 	passwords, err := auth.NewPasswordHasher(a.config.Auth.BcryptCost)
 	if err != nil {
 		return nil, err
@@ -38,10 +43,10 @@ func (a *App) authService() (*services.AuthService, error) {
 
 	return services.NewAuthService(
 		a.database,
-		repositories.NewUserRepository(a.database),
+		users,
 		repositories.NewRefreshTokenRepository(a.database),
 		passwords,
-		auth.NewTokenIssuer(a.config.Auth),
+		accessTokens,
 		a.config.Auth.RefreshTokenLifetime,
 		a.log,
 	), nil

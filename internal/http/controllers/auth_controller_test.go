@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 
 	"github.com/francky-d/go-starter-kit/internal/app"
 	"github.com/francky-d/go-starter-kit/internal/config"
@@ -35,12 +36,21 @@ func newClient(t *testing.T) *testutil.Client {
 
 func newClientWith(t *testing.T, cfg config.Config) *testutil.Client {
 	t.Helper()
-	testutil.DB(t)
+	client, _ := newClientAndDB(t, cfg)
+
+	return client
+}
+
+// newClientAndDB also returns the test database, for tests that change
+// data behind the API's back.
+func newClientAndDB(t *testing.T, cfg config.Config) (*testutil.Client, *gorm.DB) {
+	t.Helper()
+	db := testutil.DB(t)
 	application, err := app.New(t.Context(), cfg, logging.Discard())
 	require.NoError(t, err)
 	t.Cleanup(func() { assert.NoError(t, application.Close()) })
 
-	return testutil.NewClient(t, application.Handler())
+	return testutil.NewClient(t, application.Handler()), db
 }
 
 func register(t *testing.T, client *testutil.Client, email string) session {

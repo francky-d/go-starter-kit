@@ -67,6 +67,35 @@ verify them, sharing the secret would let that service forge tokens too:
 switch to an asymmetric algorithm such as `EdDSA` or `RS256`, keep the
 private key in this API and publish only the public key.
 
+## Authenticating requests
+
+Routes behind authentication expect the access token in the
+`Authorization` header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+The scheme is case-insensitive. A request is refused with `401
+Unauthenticated.` when the header is missing, uses another scheme, or
+carries a token that fails any check of [Access tokens](#access-tokens).
+A refresh token is not an access token and is refused too.
+
+The `WWW-Authenticate` header of the refusal tells a client what to do:
+
+| Header | Meaning | What the client should do |
+| --- | --- | --- |
+| `Bearer` | No bearer token was sent. | Sign in. |
+| `Bearer error="invalid_token"` | The token sent was refused. Expired and forged tokens get the same answer. | Refresh the session, then sign in if that fails. |
+
+An access token stays valid after its user is deleted, until it expires.
+Endpoints that load the current user answer `401` in that case.
+
+In a controller, `middleware.CurrentUserID(c)` returns the id of the
+authenticated user. It is only available on routes behind the
+`Authenticated` middleware; calling it elsewhere is a programming error
+and panics.
+
 ## Refresh tokens
 
 A refresh token lets a client obtain a new access token without sending
