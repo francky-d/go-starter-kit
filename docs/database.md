@@ -190,4 +190,5 @@ client reçoit une erreur 4xx, comme le `409` d'un email déjà pris. Les
 requêtes journalisées montrent des marqueurs (`$1`, `$2`) au lieu des
 valeurs liées : emails, hash de mots de passe et jetons n'arrivent jamais
 dans les logs. Une requête qui ne trouve aucun enregistrement n'est pas
-journalisée.
+journalisée. Une requête SQL lancée pendant une requête HTTP porte son
+`request_id`, comme les autres enregistrements de cette requête.

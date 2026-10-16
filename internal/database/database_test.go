@@ -1,13 +1,16 @@
 package database_test
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/database"
 	"github.com/francky-d/go-starter-kit/internal/logging"
 	"github.com/francky-d/go-starter-kit/internal/testutil"
@@ -41,6 +44,20 @@ func TestConnect_QueriesCutByADeadlineReportIt(t *testing.T) {
 	err = db.WithContext(ctx).Exec("SELECT pg_sleep(5)").Error
 
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
+}
+
+func TestConnect_LogsFailedQueriesWithTheRequestID(t *testing.T) {
+	var logs bytes.Buffer
+	log := logging.New(config.Log{Level: slog.LevelWarn, Format: config.LogFormatJSON}, &logs)
+	db, err := database.Connect(t.Context(), testutil.DatabaseConfig(), log)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, database.Close(db)) })
+	ctx := logging.ContextWithRequestID(t.Context(), "req-42")
+
+	require.Error(t, db.WithContext(ctx).Exec("SELECT * FROM no_such_table").Error)
+
+	assert.Contains(t, logs.String(), `"msg":"SQL executed"`)
+	assert.Contains(t, logs.String(), `"request_id":"req-42"`)
 }
 
 func TestConnect_FailsFastWithoutLeakingThePassword(t *testing.T) {

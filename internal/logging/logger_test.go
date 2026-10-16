@@ -47,6 +47,24 @@ func TestNew_DropsRecordsBelowTheConfiguredLevel(t *testing.T) {
 	assert.Contains(t, output.String(), "kept")
 }
 
+func TestNew_AddsTheRequestIDCarriedByTheContext(t *testing.T) {
+	var output bytes.Buffer
+	logger := logging.New(config.Log{Level: slog.LevelInfo, Format: config.LogFormatJSON}, &output)
+	ctx := logging.ContextWithRequestID(t.Context(), "req-42")
+
+	logger.With("app", "api").InfoContext(ctx, "within a request")
+	logger.Info("outside a request")
+
+	lines := bytes.Split(bytes.TrimSpace(output.Bytes()), []byte("\n"))
+	require.Len(t, lines, 2)
+	var within, outside map[string]any
+	require.NoError(t, json.Unmarshal(lines[0], &within))
+	require.NoError(t, json.Unmarshal(lines[1], &outside))
+	assert.Equal(t, "req-42", within["request_id"])
+	assert.Equal(t, "api", within["app"])
+	assert.NotContains(t, outside, "request_id")
+}
+
 func TestDiscard_WritesNothing(t *testing.T) {
 	logger := logging.Discard()
 

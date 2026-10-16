@@ -13,11 +13,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/francky-d/go-starter-kit/internal/apperror"
 	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/http/middleware"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
+	"github.com/francky-d/go-starter-kit/internal/logging"
 	"github.com/francky-d/go-starter-kit/internal/testutil"
 )
 
@@ -36,12 +38,17 @@ func newServer(t *testing.T, change func(*config.Config)) server {
 	}
 
 	logs := &bytes.Buffer{}
-	log := slog.New(slog.NewJSONHandler(logs, nil))
+	log := logging.New(config.Log{Level: slog.LevelInfo, Format: config.LogFormatJSON}, logs)
 
 	e := echo.New()
 	e.HTTPErrorHandler = respond.ErrorHandler(log)
 	e.Use(middleware.Baseline(cfg, log)...)
 	registerTestRoutes(e)
+	// Like a service logging with the request context.
+	e.GET("/log", func(c echo.Context) error {
+		log.InfoContext(c.Request().Context(), "handler step")
+		return c.NoContent(http.StatusNoContent)
+	})
 
 	return server{echo: e, logs: logs}
 }
@@ -182,6 +189,35 @@ func TestBaseline_AnswersWith503WhenTheDeadlineCutsWrappedWork(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
 	assert.JSONEq(t, `{"message":"Service unavailable."}`, response.Body.String())
+}
+
+func TestBaseline_GivesTheRequestIDToRecordsLoggedWithTheRequestContext(t *testing.T) {
+	s := newServer(t, nil)
+
+	response := s.get("/log")
+
+	assertEveryRecordNames(t, s.logs, response.Header().Get(echo.HeaderXRequestID), 2)
+	assert.Contains(t, s.logs.String(), `"msg":"handler step"`)
+}
+
+func TestBaseline_WritesTheRequestIDOnceInEveryRecordOfTheRequest(t *testing.T) {
+	s := newServer(t, nil)
+
+	response := s.get("/panic")
+
+	// panic recovered, request failed, then request
+	assertEveryRecordNames(t, s.logs, response.Header().Get(echo.HeaderXRequestID), 3)
+}
+
+func assertEveryRecordNames(t *testing.T, logs *bytes.Buffer, requestID string, records int) {
+	t.Helper()
+	require.NotEmpty(t, requestID)
+	lines := strings.Split(strings.TrimSpace(logs.String()), "\n")
+	require.Len(t, lines, records)
+	for _, line := range lines {
+		assert.Equal(t, 1, strings.Count(line, `"request_id"`), line)
+		assert.Contains(t, line, `"request_id":"`+requestID+`"`)
+	}
 }
 
 // The response reaches no one: what matters is the status in the logs.

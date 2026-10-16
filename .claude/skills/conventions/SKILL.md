@@ -171,6 +171,9 @@ The kit applies SOLID the Go way.
 - Log with the injected `*slog.Logger` and key-value attributes:
   `log.Error("refresh failed", "user_id", id, "error", err)`. Never log
   passwords, tokens, secrets or full request bodies.
+- Inside a request, log through the `...Context` methods
+  (`log.WarnContext(ctx, ...)`): the logger reads the request id from the
+  context and adds it as `request_id`. Never add `request_id` by hand.
 
 ## 9. Models
 

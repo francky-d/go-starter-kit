@@ -8,13 +8,17 @@ import (
 )
 
 func New(cfg config.Log, output io.Writer) *slog.Logger {
+	return slog.New(requestIDHandler{newHandler(cfg, output)})
+}
+
+func newHandler(cfg config.Log, output io.Writer) slog.Handler {
 	options := &slog.HandlerOptions{Level: cfg.Level}
 
 	switch cfg.Format {
 	case config.LogFormatText:
-		return slog.New(slog.NewTextHandler(output, options))
+		return slog.NewTextHandler(output, options)
 	default: // config.LogFormatJSON; config.Validate rejects any other value
-		return slog.New(slog.NewJSONHandler(output, options))
+		return slog.NewJSONHandler(output, options)
 	}
 }
 

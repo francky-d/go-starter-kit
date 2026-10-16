@@ -28,7 +28,7 @@ func ErrorHandler(log *slog.Logger) echo.HTTPErrorHandler {
 		logError(log, c, appErr, err)
 
 		if writeErr := writeError(c, appErr); writeErr != nil {
-			log.Error("write error response", "error", writeErr)
+			log.ErrorContext(c.Request().Context(), "write error response", "error", writeErr)
 		}
 	}
 }
@@ -81,16 +81,10 @@ func levelFor(status int) slog.Level {
 }
 
 func errorAttributes(c echo.Context, appErr *apperror.Error, err error) []any {
-	attributes := []any{
+	return []any{
 		"method", c.Request().Method,
 		"path", c.Request().URL.Path,
 		"status", appErr.Status,
 		"error", err,
 	}
-
-	if requestID := c.Response().Header().Get(echo.HeaderXRequestID); requestID != "" {
-		attributes = append(attributes, "request_id", requestID)
-	}
-
-	return attributes
 }

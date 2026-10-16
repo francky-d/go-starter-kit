@@ -54,7 +54,8 @@ Toute erreur de démarrage (configuration invalide, base injoignable, port
 déjà utilisé) est affichée sur la sortie d'erreur et le processus se
 termine avec le statut 1.
 
-Chaque enregistrement de log porte les attributs `app` et `environment`.
+Chaque enregistrement de log porte les attributs `app` et `environment`,
+et ceux d'une requête portent aussi son `request_id`.
 
 Le serveur applique les délais de lecture, d'écriture et d'inactivité de la
 [configuration](configuration.md#serveur-http) : un client lent ou inactif

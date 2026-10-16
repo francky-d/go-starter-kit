@@ -117,7 +117,7 @@ any other task.
 | 47 | `requests.Bind` also binds XML (by Go field name) and form bodies: decide whether to accept JSON only and answer `415` otherwise | `fix(http): bind JSON request bodies only` | done |
 | 48 | A body without `Content-Length` that exceeds `HTTP_BODY_LIMIT` answers `400 Malformed request body.` instead of `413` | `fix(http): answer 413 for oversized streamed bodies` | done |
 | 49 | A client disconnect (`context.Canceled`) is logged as an ERROR `500`: log it below ERROR | `fix(http): stop logging client disconnects as server errors` | done |
-| 50 | The request id is missing from GORM and service log records: carry it in the context and add it in the slog handler | `feat(logging): add the request id to every log record of a request` | todo |
+| 50 | The request id is missing from GORM and service log records: carry it in the context and add it in the slog handler | `feat(logging): add the request id to every log record of a request` | done |
 
 ## Documentation in French and guides
 

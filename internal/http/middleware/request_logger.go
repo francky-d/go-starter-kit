@@ -23,7 +23,6 @@ func RequestLogger(log *slog.Logger, quietRoutes ...string) echo.MiddlewareFunc 
 		LogStatus:    true,
 		LogLatency:   true,
 		LogRemoteIP:  true,
-		LogRequestID: true,
 		LogValuesFunc: func(c echo.Context, request echomiddleware.RequestLoggerValues) error {
 			log.LogAttrs(c.Request().Context(), requestLevel(request, quietRoutes), "request",
 				slog.String("method", request.Method),
@@ -32,7 +31,6 @@ func RequestLogger(log *slog.Logger, quietRoutes ...string) echo.MiddlewareFunc 
 				slog.Int("status", request.Status),
 				slog.Duration("latency", request.Latency),
 				slog.String("remote_ip", request.RemoteIP),
-				slog.String("request_id", request.RequestID),
 			)
 
 			return nil

@@ -30,7 +30,7 @@ Chaque réponse porte :
 
 | En-tête | Valeur |
 | --- | --- |
-| `X-Request-Id` | Identifiant de la requête, également écrit dans les logs de la requête et de ses erreurs, mais pas dans ceux de GORM ni des services (voir [Ce qui est journalisé](request-lifecycle.md#ce-qui-est-journalisé)). Une valeur fournie par le client est conservée si elle compte de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon une nouvelle est générée. |
+| `X-Request-Id` | Identifiant de la requête, également écrit dans chaque enregistrement de log de la requête, y compris ceux de GORM et des services (voir [Ce qui est journalisé](request-lifecycle.md#ce-qui-est-journalisé)). Une valeur fournie par le client est conservée si elle compte de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon une nouvelle est générée. |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |

@@ -15,7 +15,6 @@ func Recover(log *slog.Logger) echo.MiddlewareFunc {
 			log.ErrorContext(c.Request().Context(), "panic recovered",
 				"error", err,
 				"stack", string(stack),
-				"request_id", c.Response().Header().Get(echo.HeaderXRequestID),
 			)
 
 			return err

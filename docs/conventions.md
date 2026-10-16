@@ -49,7 +49,8 @@ router -> middleware -> controller -> service -> repository -> database
 - **La configuration est typée.** Seul `internal/config` lit les variables
   d'environnement.
 - **Le contexte partout.** Chaque fonction qui fait des I/O prend `ctx` en
-  premier.
+  premier. Pendant une requête, journalisez avec les méthodes `...Context`
+  du logger (`WarnContext(ctx, ...)`) : il y lit l'identifiant de requête.
 - **Les migrations ne font qu'ajouter.** Ne modifiez jamais une migration
   appliquée ailleurs que sur votre machine ; écrivez-en une nouvelle.
 - **Chaque changement est testé**, contre une vraie base PostgreSQL quand

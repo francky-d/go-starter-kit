@@ -95,7 +95,7 @@ l'ordre du tableau, le retour dans l'ordre inverse.
 
 | Ordre | Middleware | Rôle | Statut produit |
 | --- | --- | --- | --- |
-| 1 | Request ID | Conserve un `X-Request-Id` client de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon en génère un de 32 caractères. L'écrit dans l'en-tête `X-Request-Id` de la réponse. | aucun |
+| 1 | Request ID | Conserve un `X-Request-Id` client de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon en génère un de 32 caractères. L'écrit dans l'en-tête `X-Request-Id` de la réponse, et le place dans le contexte de la requête, d'où le logger le recopie dans chaque enregistrement. | aucun |
 | 2 | Request logger | Au retour, confie une éventuelle erreur à `respond.ErrorHandler`, puis écrit un enregistrement `request` avec le statut final (voir [Ce qui est journalisé](#ce-qui-est-journalisé)). | aucun |
 | 3 | Recover | Rattrape un panic des couches inférieures, journalise `panic recovered` avec la pile d'appels, puis appelle `respond.ErrorHandler`. | `500` |
 | 4 | Secure headers | Pose `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `Referrer-Policy: no-referrer` et `X-XSS-Protection: 0`, avant d'appeler la suite : les réponses d'erreur les portent aussi. | aucun |
@@ -430,20 +430,23 @@ d'Echo, la pile d'un panic ne vont que dans les logs. Voir
 | `request rejected` | `respond.ErrorHandler`, statut 4xx | INFO pour `401`, `403` et `429` ; DEBUG pour les autres | `method`, `path`, `status`, `error`, `request_id` |
 | `request failed` | `respond.ErrorHandler`, statut 5xx | ERROR | `method`, `path`, `status`, `error`, `request_id` |
 | `panic recovered` | Recover | ERROR | `error`, `stack`, `request_id` |
-| `SQL executed` | GORM | ERROR pour une requête en échec, sauf « aucun enregistrement » ; WARN au-delà de `DB_SLOW_QUERY_THRESHOLD` | `trace` : `duration`, `sql` avec des marqueurs à la place des valeurs, `rows`, `error` |
-| Messages des services | `AuthService` | WARN | `user_id`, et `error` pour un échec |
+| `SQL executed` | GORM | ERROR pour une requête en échec, sauf « aucun enregistrement » ; WARN au-delà de `DB_SLOW_QUERY_THRESHOLD` | `trace` : `duration`, `sql` avec des marqueurs à la place des valeurs, `rows`, `error` ; `request_id` |
+| Messages des services | `AuthService` | WARN | `user_id`, et `error` pour un échec ; `request_id` |
 
 Chaque enregistrement porte aussi `app` et `environment`. Avec
 `LOG_LEVEL=info`, la valeur par défaut, les rejets de niveau DEBUG (`400`,
-`404`, `405`, `409`, `413`, `415`, `422`, `499`) ne sont pas écrits. Une requête
-SQL en échec est journalisée par GORM au niveau ERROR même quand le client
-reçoit une erreur 4xx, comme le `409` d'un email déjà pris.
+`404`, `405`, `409`, `413`, `415`, `422`, `499`) ne sont pas écrits. Une
+requête SQL en échec est journalisée par GORM au niveau ERROR même quand le
+client reçoit une erreur 4xx, comme le `409` d'un email déjà pris.
 
 **Identifiant de requête.** `X-Request-Id` figure dans la réponse et dans
-les enregistrements `request`, `request rejected`, `request failed` et
-`panic recovered`. Il ne figure pas dans les enregistrements de GORM ni
-dans ceux des services : le logger ne lit rien dans le contexte. Pour les
-relier à une requête, utilisez l'horodatage et `user_id`.
+chaque enregistrement journalisé avec le contexte de la requête : ceux du
+request logger, de Recover et de `respond.ErrorHandler`, mais aussi ceux
+de GORM et des services. Request ID place l'identifiant dans le contexte,
+et le handler du logger ([request_id.go](../internal/logging/request_id.go))
+l'ajoute en `request_id`. Un enregistrement écrit sans ce contexte, comme
+`server started`, n'en a pas : dans une requête, journalisez avec les
+méthodes `...Context` du logger.
 
 ### Qui produit quel statut
 
