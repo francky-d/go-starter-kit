@@ -209,28 +209,29 @@ requête, et répond `503 Service unavailable.` si le ping échoue.
 
 ### `requests.Bind`
 
-[bind.go](../internal/http/requests/bind.go) appelle le binder d'Echo, puis
-valide la struct d'après ses tags `validate`. Chaque endpoint déclare sa
+[bind.go](../internal/http/requests/bind.go) vérifie que le corps est du
+JSON, appelle le binder d'Echo, puis valide la struct d'après ses tags
+`validate`. Chaque endpoint déclare sa
 propre struct dans [requests](../internal/http/requests/) : un client ne
 peut pas remplir un champ que l'endpoint n'attend pas.
 
 Le binder lit d'abord les paramètres de chemin (tags `param`), puis les
 paramètres de query string (tags `query`) pour `GET`, `DELETE` et `HEAD`
-seulement, puis le corps selon son `Content-Type`.
+seulement, puis le corps JSON (tags `json`).
 
 | Situation | Réponse |
 | --- | --- |
 | Corps vide (`Content-Length: 0`) | Rien n'est lié ; la validation signale les champs obligatoires : `422`. |
 | JSON invalide, ou valeur du mauvais type | `400 Malformed request body.` Le message du parseur, qui peut citer le corps, ne va que dans les logs. |
 | Corps sans `Content-Length` qui dépasse `HTTP_BODY_LIMIT` pendant la lecture | `400 Malformed request body.`, et non `413` : Body limit ne voit pas la taille avant la lecture. |
-| Corps sans `Content-Type`, ou d'un type que le binder ne connaît pas | `415 Unsupported Media Type.` |
+| Corps non vide envoyé sans `Content-Type` `application/json` (un paramètre comme `charset` est accepté) | `415 Unsupported Media Type.` |
 | Une règle `validate` n'est pas respectée | `422 The given data was invalid.`, avec les messages par champ dans `errors`. |
 | L'entrée n'est pas une struct | `500` : c'est une erreur de programmation. |
 
-Le binder d'Echo connaît JSON, XML et les formulaires. Les structs de
-requête du kit ne portent que des tags `json` : un corps de formulaire ne
-remplit aucun champ et finit en `422`, tandis qu'un corps XML est lié
-d'après les noms des champs Go.
+Le binder d'Echo accepterait aussi XML, lié d'après les noms des champs Go,
+et les formulaires : `requests.Bind` les refuse avant de l'appeler. Un
+corps vide n'est pas vérifié, si bien qu'une requête `GET` qui ne lie que
+sa query string n'a pas besoin de `Content-Type`.
 
 Les clés de `errors` sont les noms JSON des champs, et les messages ne
 répètent jamais la valeur envoyée. Pour `POST /api/v1/auth/login` avec le

@@ -167,6 +167,32 @@ func TestBind_RejectsUnsupportedContentTypes(t *testing.T) {
 	assert.JSONEq(t, `{"message":"Unsupported Media Type."}`, response.Body.String())
 }
 
+// Echo's binder alone would bind XML by Go field name, and forms.
+func TestBind_RejectsBodiesInFormatsOtherThanJSON(t *testing.T) {
+	bodies := map[string]string{
+		echo.MIMEApplicationXML:  `<signUp><Name>Ada</Name></signUp>`,
+		echo.MIMEApplicationForm: `name=Ada`,
+		"":                       `{"name":"Ada"}`,
+	}
+
+	for contentType, body := range bodies {
+		t.Run(contentType, func(t *testing.T) {
+			response, bound := post(t, contentType, body)
+
+			require.Equal(t, http.StatusUnsupportedMediaType, response.Code)
+			assert.Empty(t, bound.Name)
+		})
+	}
+}
+
+func TestBind_AcceptsJSONWithACharset(t *testing.T) {
+	response, bound := post(t, "application/json; charset=utf-8",
+		`{"name":"Ada","email":"ada@example.com","password":"long-enough"}`)
+
+	require.Equal(t, http.StatusNoContent, response.Code)
+	assert.Equal(t, "Ada", bound.Name)
+}
+
 func TestValidate_TreatsANonStructInputAsAProgrammingError(t *testing.T) {
 	err := requests.Validate(t.Context(), "not a struct")
 

@@ -65,7 +65,7 @@ les échecs de validation et associe à chaque champ invalide ses messages :
 | 404 | `Resource not found.` | La route ou l'enregistrement n'existe pas, ou l'enregistrement appartient à quelqu'un d'autre. |
 | 409 | selon l'erreur | La requête entre en conflit avec l'état actuel. |
 | 413 | `Request Entity Too Large.` | Le corps dépasse `HTTP_BODY_LIMIT`. |
-| 415 | `Unsupported Media Type.` | Le `Content-Type` du corps est absent ou inconnu. Le binder d'Echo accepte aussi XML et les formulaires (voir [`requests.Bind`](request-lifecycle.md#requestsbind)). |
+| 415 | `Unsupported Media Type.` | Le corps n'est pas envoyé en `application/json`. |
 | 422 | `The given data was invalid.` | La validation a échoué ; voir `errors`. |
 | 429 | `Too many requests.` | Une limite de débit est atteinte. L'en-tête `Retry-After` donne le nombre de secondes à attendre. |
 | 500 | `Internal server error.` | Une erreur inattendue s'est produite. |
