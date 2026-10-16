@@ -1,5 +1,7 @@
 name: CI
 
+# .gitlab-ci.yml runs the same checks on GitLab: change both together.
+
 on:
   push:
     branches: [main]

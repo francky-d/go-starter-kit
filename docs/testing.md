@@ -51,11 +51,12 @@ fonctionnent ensemble, ce que ne font pas les tests de chaque endpoint.
 
 ## Intégration continue
 
-`.github/workflows/ci.yml` vérifie chaque push sur `main` et chaque pull
-request avec deux jobs.
+Le kit fournit la même CI pour deux hébergeurs : GitHub Actions
+(`.github/workflows/ci.yml`) et GitLab CI (`.gitlab-ci.yml`). Chacune a
+deux jobs.
 
-**Lint and test** lance les mêmes commandes qu'une exécution locale, avec
-la dernière version corrective de Go 1.26 :
+**Lint and test** (`lint-and-test` sur GitLab) lance les mêmes commandes
+qu'une exécution locale, avec la dernière version corrective de Go 1.26 :
 
 1. `go build ./...`
 2. `make lint`
@@ -64,16 +65,30 @@ la dernière version corrective de Go 1.26 :
    vérifie aussi les tests concurrents, comme deux rafraîchissements du
    même jeton.
 
-**Docker image** construit le `Dockerfile` : un changement qui casse
-l'image échoue comme un test.
+**Docker image** (`docker-image` sur GitLab) construit le `Dockerfile` :
+un changement qui casse l'image échoue comme un test.
 
-Un nouveau push sur une pull request annule l'exécution encore en cours ;
-les exécutions sur `main` vont toujours à leur terme. Un commit dont le
-message contient `[skip ci]` n'est pas vérifié : le skill de commit ne
-l'ajoute que quand tous les fichiers modifiés sont en Markdown. Si une
-règle de protection de branche exige les vérifications de la CI, une pull
-request dont le dernier commit a sauté la CI ne peut pas être fusionnée
-tant qu'un nouveau commit ne les a pas lancées.
+| | GitHub Actions | GitLab CI |
+| --- | --- | --- |
+| Déclencheurs | Chaque push sur `main` et chaque pull request. | Chaque merge request et chaque push sur la branche par défaut. |
+| Annulation | Un nouveau push sur une pull request annule l'exécution en cours. | Un nouveau push sur une merge request annule le pipeline en cours. |
+| Branche principale | Chaque exécution va à son terme. | Chaque pipeline va à son terme. |
+| Cache Go | Géré par `actions/setup-go`. | Modules et compilation dans `.go/`, clé calculée sur `go.sum`. |
+| Image Docker | Construite par le runner. | Construite par Docker-in-Docker (`docker:29-dind`) : le runner doit autoriser les conteneurs privilégiés et partager `/certs/client` entre le service et le job, comme les runners partagés de GitLab.com. |
+| Version minimale | — | GitLab 16.10, pour `workflow:auto_cancel`. |
+
+GitLab ne met en cache que des chemins situés dans le projet, d'où le
+dossier `.go/`. `make lint` et `make fmt` ignorent les dossiers cachés,
+comme les commandes `go` : sans cela, `gofmt` analyserait aussi les
+modules téléchargés.
+
+Un commit dont le message contient `[skip ci]` n'est vérifié ni par
+GitHub ni par GitLab : le skill de commit ne l'ajoute que quand tous les
+fichiers modifiés sont en Markdown. Si le dépôt exige une CI verte avant
+de fusionner (règle de protection de branche sur GitHub, « Pipelines must
+succeed » sur GitLab), une pull ou merge request dont le dernier commit a
+sauté la CI ne peut pas être fusionnée tant qu'un nouveau commit ne l'a
+pas lancée.
 
 ## Helpers
 

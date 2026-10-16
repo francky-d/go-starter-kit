@@ -96,8 +96,8 @@ suivante qui réussit le relance.
 | `make migrate-create name=...` | Crée une paire de migrations up/down vide. |
 | `make test` | Lance la suite de tests. PostgreSQL doit tourner. |
 | `make test-cover` | Lance la suite de tests avec couverture et affiche le total. |
-| `make lint` | Vérifie le formatage et `go.mod`, puis lance `go vet` et `staticcheck`. |
-| `make fmt` | Formate chaque fichier Go avec `gofmt`. |
+| `make lint` | Vérifie le formatage et `go.mod`, puis lance `go vet` et `staticcheck`. Ignore les dossiers cachés. |
+| `make fmt` | Formate chaque fichier Go avec `gofmt`, hors dossiers cachés. |
 | `make tidy` | Synchronise `go.mod` et `go.sum` avec les imports. |
 
 `staticcheck` est épinglé dans `go.mod` avec la directive `tool` et

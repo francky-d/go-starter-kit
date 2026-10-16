@@ -59,7 +59,7 @@ func (ac *AuthController) Login(c echo.Context) error {
 - **Tests :** tests unitaires, de repository, d'endpoint et de bout en bout
   contre une vraie base PostgreSQL ; rapport de couverture.
 - **Outillage :** Makefile, Docker Compose, une image distroless de 28 Mo,
-  rechargement à chaud, `staticcheck`, CI GitHub Actions.
+  rechargement à chaud, `staticcheck`, CI pour GitHub Actions et GitLab CI.
 - **Prêt pour les agents :** `AGENTS.md`, `CLAUDE.md` et des skills qui
   apprennent à un agent IA les conventions, l'ajout d'une ressource, la
   revue du code, la mise à jour de la documentation et les commits.
@@ -115,7 +115,8 @@ database/
   init/                crée la base de test dans le conteneur PostgreSQL local
 docs/                  documentation
 .claude/skills/        skills pour les agents IA
-.github/workflows/     CI
+.github/workflows/     CI GitHub Actions
+.gitlab-ci.yml         CI GitLab
 ```
 
 ## Documentation

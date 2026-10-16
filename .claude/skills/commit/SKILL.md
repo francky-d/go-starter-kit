@@ -187,9 +187,11 @@ current session. When committing:
 
 If **every** file in a group is a `.md` file, append `[skip ci]` to the
 subject: `docs: clarify refresh token rotation [skip ci]`. If even one file
-is not Markdown, do not add it. On a pull request branch of a repository
-whose branch protection requires the CI checks, do not add it to the last
-commit: a skipped run blocks the merge.
+is not Markdown, do not add it. GitHub and GitLab both honour it. On a
+pull or merge request branch of a repository that requires a green CI
+before merging (branch protection on GitHub, "Pipelines must succeed" on
+GitLab), do not add it to the last commit: a skipped run blocks the
+merge.
 
 ## Templates
 

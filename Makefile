@@ -70,15 +70,15 @@ test-cover: ## Run the test suite with coverage; writes coverage.out and coverag
 
 .PHONY: lint
 lint: ## Check formatting and go.mod, then run go vet and staticcheck
-	@unformatted="$$(gofmt -l .)"; \
+	@unformatted="$$(find . -name '.?*' -prune -o -type f -name '*.go' -exec gofmt -l {} +)"; \
 	if [ -n "$$unformatted" ]; then echo "Run make fmt. Unformatted files:"; echo "$$unformatted"; exit 1; fi
 	go mod tidy -diff
 	go vet ./...
 	go tool staticcheck ./...
 
 .PHONY: fmt
-fmt: ## Format every Go file
-	gofmt -w .
+fmt: ## Format every Go file outside hidden directories
+	find . -name '.?*' -prune -o -type f -name '*.go' -exec gofmt -w {} +
 
 .PHONY: tidy
 tidy: ## Sync go.mod and go.sum with the imports

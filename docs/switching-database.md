@@ -45,7 +45,7 @@ changer d'ORM ne touche pas ce code ; abandonner GORM le touche.
 | `internal/testutil/db.go` | `Truncate` lit `pg_tables`, appelle `quote_ident` et lance `TRUNCATE ... CASCADE`. | Réécrire `Truncate` pour la nouvelle base. |
 | `internal/testutil/database.go` | L'URL par défaut `postgres://...`. | Mettre l'URL de la base de test locale. |
 | `go.mod` | `gorm.io/driver/postgres` et le driver pgx de golang-migrate. | Remplacer ces dépendances. |
-| `docker-compose.yml`, `database/init/`, `.github/workflows/ci.yml`, `.env.example` | Le service PostgreSQL, la création de la base de test, le service de la CI, l'exemple de `DATABASE_URL`. | Les remplacer par leurs équivalents. |
+| `docker-compose.yml`, `database/init/`, `.github/workflows/ci.yml`, `.gitlab-ci.yml`, `.env.example` | Le service PostgreSQL, la création de la base de test, les services des deux CI, l'exemple de `DATABASE_URL`. | Les remplacer par leurs équivalents. |
 | `docs/` | Les pages qui décrivent PostgreSQL, dont [database.md](database.md). | Les mettre à jour dans le même commit. |
 
 ## Les pièges
@@ -151,7 +151,7 @@ logs dans tous les cas.
 5. Adaptez les tags `type:uuid` des modèles.
 6. Réécrivez `testutil.Truncate` et l'URL de test par défaut.
 7. Remplacez le service de base de données de Docker Compose, le script
-   de `database/init/`, le service de la CI et `.env.example`.
+   de `database/init/`, les services des deux CI et `.env.example`.
 8. Lancez `make test` : les tests des repositories, le test de
    rafraîchissement concurrent et les tests des migrations valident le
    changement, dont les deux tests de traduction des contraintes décrits

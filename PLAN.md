@@ -127,3 +127,9 @@ English translation will follow.
 | 36 | Use case guide: a to-do list with sharing and roles, with verified code | `docs: add to-do list use case guide` | done |
 | 38 | Validation messages say "1 character", not "1 characters" (found while building the guide) | `fix(http): use the singular for a validation limit of one` | done |
 | 41 | Remove the announcement of a future translation from the docs index: the docs describe the current state | `docs: drop the translation plan from the docs index` | done |
+
+## Continuous integration
+
+| # | Task | Commit | Status |
+| --- | --- | --- | --- |
+| 42 | GitLab CI pipeline equivalent to the GitHub Actions workflow | `ci: add GitLab CI pipeline` | done |

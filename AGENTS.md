@@ -8,8 +8,8 @@ loaded at the start of every session. Read it fully before acting.
 A starter kit for building REST APIs in Go. It provides an HTTP layer on
 Echo, persistence with GORM and PostgreSQL, versioned SQL migrations, and a
 user authentication module issuing JWT access tokens with rotating refresh
-tokens. It ships with tests against a real database, a Docker image and a
-CI workflow.
+tokens. It ships with tests against a real database, a Docker image and
+equivalent CI pipelines for GitHub Actions and GitLab CI.
 
 The code is written to **read like plain English**: fluent chaining where Go
 allows it (routes, responses, queries, validation), descriptive names
@@ -37,7 +37,7 @@ without `Authenticated`: a wiring bug, not a client error).
 | Linting | `gofmt`, `go vet`, `staticcheck` |
 | Container | Multi-stage `Dockerfile`, distroless runtime image |
 | Live reload | Air, pinned in the `Makefile` and run with `go run` |
-| Continuous integration | GitHub Actions: build, lint, tests with the race detector, Docker image build |
+| Continuous integration | GitHub Actions and GitLab CI, kept equivalent: build, lint, tests with the race detector, Docker image build |
 
 Do not add, remove or upgrade a dependency without the user's approval.
 
@@ -67,7 +67,8 @@ create a new top-level folder without the user's approval.
 | `docs/` | Documentation of the current state of the kit. |
 | `review/` | The code review produced by the `review` skill, updated in place. |
 | `.claude/skills/` | Skills for Claude Code; also readable as convention guides. |
-| `.github/workflows/` | The CI workflow. |
+| `.github/workflows/` | The GitHub Actions workflow. |
+| `.gitlab-ci.yml` | The GitLab CI pipeline, equivalent to the GitHub Actions workflow: change both together. |
 
 ## Commands
 
@@ -89,8 +90,8 @@ Run `make` to list every command.
 | `make migrate-create name=...` | Create an empty up/down migration pair. |
 | `make test` | Run the test suite. Needs `make docker-up` first. |
 | `make test-cover` | Run the test suite with coverage; writes `coverage.out` and `coverage.html`. |
-| `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. |
-| `make fmt` | Format every Go file. |
+| `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. Skips hidden directories. |
+| `make fmt` | Format every Go file outside hidden directories. |
 | `make tidy` | Sync `go.mod` and `go.sum` with the imports. |
 
 ## Working rules

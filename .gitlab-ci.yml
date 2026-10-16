@@ -1,0 +1,58 @@
+# The same checks as .github/workflows/ci.yml, for a copy of the kit hosted
+# on GitLab. Needs GitLab 16.10 or later, for workflow:auto_cancel.
+
+# Pipelines run for merge requests and for the default branch. A newer push
+# to a merge request cancels the older pipeline. Each pipeline on the default
+# branch runs to the end, so every commit there keeps its own result.
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      auto_cancel:
+        on_new_commit: none
+
+default:
+  interruptible: true
+  timeout: 15m
+
+lint-and-test:
+  # The latest 1.26 patch, not the minimum in go.mod: older patches of the
+  # standard library carry known vulnerabilities.
+  image: golang:1.26
+  # With the Docker executor, the runner waits for the service port, which
+  # PostgreSQL only opens once its initialisation is done.
+  services:
+    - name: postgres:17-alpine
+      alias: postgres
+  variables:
+    POSTGRES_USER: app
+    POSTGRES_PASSWORD: app
+    POSTGRES_DB: app_test
+    TEST_DATABASE_URL: postgres://app:app@postgres:5432/app_test?sslmode=disable
+    # GitLab only caches paths inside the project directory.
+    GOMODCACHE: $CI_PROJECT_DIR/.go/mod
+    GOCACHE: $CI_PROJECT_DIR/.go/build
+  cache:
+    key:
+      files:
+        - go.sum
+    paths:
+      - .go/
+  script:
+    - go build ./...
+    - make lint
+    - go test -race -p 1 ./...
+
+# Docker-in-Docker with TLS needs a runner that allows privileged containers
+# and shares /certs/client between the service and the job (a volume in the
+# runner's config.toml), as the GitLab.com shared runners do.
+docker-image:
+  image: docker:29-cli
+  services:
+    - docker:29-dind
+  variables:
+    DOCKER_TLS_CERTDIR: /certs
+  script:
+    - docker build --tag go-starter-kit:ci .
