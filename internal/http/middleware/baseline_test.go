@@ -66,6 +66,12 @@ func registerTestRoutes(e *echo.Echo) {
 		<-ctx.Done()
 		return apperror.Internal(fmt.Errorf("call partner: %w", ctx.Err()))
 	})
+	// Like a service that cancelled its own call.
+	e.GET("/inner-cancel", func(c echo.Context) error {
+		ctx, cancel := context.WithCancel(c.Request().Context())
+		cancel()
+		return apperror.Internal(fmt.Errorf("call partner: %w", ctx.Err()))
+	})
 	e.POST("/upload", func(c echo.Context) error {
 		var body bytes.Buffer
 		if _, err := body.ReadFrom(c.Request().Body); err != nil {
@@ -176,6 +182,26 @@ func TestBaseline_AnswersWith503WhenTheDeadlineCutsWrappedWork(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
 	assert.JSONEq(t, `{"message":"Service unavailable."}`, response.Body.String())
+}
+
+// The response reaches no one: what matters is the status in the logs.
+func TestBaseline_LogsAClientDisconnectAs499(t *testing.T) {
+	s := newServer(t, nil)
+	ctx, closeConnection := context.WithCancel(t.Context())
+	closeConnection()
+	request := httptest.NewRequest(http.MethodGet, "/slow-query", nil).WithContext(ctx)
+
+	response := s.send(request)
+
+	assert.Equal(t, apperror.StatusClientClosedRequest, response.Code)
+	assert.Contains(t, s.logs.String(), `"status":499`)
+	assert.NotContains(t, s.logs.String(), `"level":"ERROR"`)
+}
+
+func TestBaseline_KeepsTheStatusOfACancellationTheHandlerMade(t *testing.T) {
+	response := newServer(t, nil).get("/inner-cancel")
+
+	assert.Equal(t, http.StatusInternalServerError, response.Code)
 }
 
 func TestBaseline_KeepsTheStatusOfADeadlineTheHandlerSet(t *testing.T) {

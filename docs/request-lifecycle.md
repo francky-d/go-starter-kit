@@ -18,7 +18,8 @@ http.Server (net/http)    délais de lecture, d'écriture et d'inactivité
 Echo                      choisit le handler de la route, ou 404 / 405
  │
  ├─ middleware de base     Request ID, Request logger, Recover,
- │                         Secure headers, CORS, Body limit, Request timeout
+ │                         Secure headers, CORS, Body limit, Request timeout,
+ │                         Client disconnect
  ├─ middleware de route    limitation de débit, Authenticated
  ▼
 contrôleur                requests.Bind, un appel de service, respond.*
@@ -101,6 +102,7 @@ l'ordre du tableau, le retour dans l'ordre inverse.
 | 5 | CORS | Seulement si `CORS_ALLOWED_ORIGINS` est renseignée. Ajoute les en-têtes CORS pour les origines autorisées et répond lui-même à toute requête `OPTIONS`, qui n'atteint donc jamais la route. | `204` |
 | 6 | Body limit | Refuse un `Content-Length` supérieur à `HTTP_BODY_LIMIT`. Sans `Content-Length`, la limite s'applique pendant la lecture du corps (voir [`requests.Bind`](#requestsbind)). | `413` |
 | 7 | Request timeout | [request_timeout.go](../internal/http/middleware/request_timeout.go). Remplace le contexte de la requête par un contexte à échéance de `HTTP_REQUEST_TIMEOUT`. Au retour, si cette échéance est dépassée, une erreur qui enveloppe `context.DeadlineExceeded` devient `503 Service unavailable.` ; une échéance que le handler a fixée lui-même garde son statut (voir [Contexte, échéance et annulation](#contexte-échéance-et-annulation)). | `503` |
+| 8 | Client disconnect | [client_disconnect.go](../internal/http/middleware/client_disconnect.go). Au retour, si le client a fermé la connexion, une erreur qui enveloppe `context.Canceled` devient `499 Client closed request.` ; une annulation que le handler a faite lui-même garde son statut. Placé à l'intérieur de Request timeout, qui annule le contexte en rendant la main. | `499` |
 
 Le request logger est placé au-dessus de Recover pour journaliser le
 statut `500` d'un panic rattrapé.
@@ -381,8 +383,9 @@ d'erreur à la couche du dessus.
 repository        return translate(err)     sentinelle, ou erreur brute
 service           return apperror.Xxx(...)  *apperror.Error : statut, message, cause
 contrôleur        return err                inchangée
-middleware        return err                Request timeout enveloppe une erreur
-                                            DeadlineExceeded dans un 503
+middleware        return err                Client disconnect enveloppe une erreur
+                                            Canceled dans un 499, Request timeout
+                                            une erreur DeadlineExceeded dans un 503
 Request logger    c.Error(err)              respond.ErrorHandler écrit la réponse,
                                             puis le logger écrit « request »
 Echo              reçoit encore l'erreur    respond.ErrorHandler : réponse déjà
@@ -432,7 +435,7 @@ d'Echo, la pile d'un panic ne vont que dans les logs. Voir
 
 Chaque enregistrement porte aussi `app` et `environment`. Avec
 `LOG_LEVEL=info`, la valeur par défaut, les rejets de niveau DEBUG (`400`,
-`404`, `405`, `409`, `413`, `415`, `422`) ne sont pas écrits. Une requête
+`404`, `405`, `409`, `413`, `415`, `422`, `499`) ne sont pas écrits. Une requête
 SQL en échec est journalisée par GORM au niveau ERROR même quand le client
 reçoit une erreur 4xx, comme le `409` d'un email déjà pris.
 
@@ -456,6 +459,7 @@ relier à une requête, utilisez l'horodatage et `user_id`.
 | `415` | `Unsupported Media Type.` | `requests.Bind` |
 | `422` | `The given data was invalid.` | `requests.Bind` ; `AuthService.Register` pour un mot de passe de plus de 72 octets |
 | `429` | `Too many requests.` | `RateLimit`, avec `Retry-After: 60` |
+| `499` | `Client closed request.` | Client disconnect, quand le client a fermé la connexion ; ce statut non standard, repris de nginx, n'apparaît que dans les logs |
 | `500` | `Internal server error.` | Recover ; tout service, par `apperror.Internal` ; `respond.ErrorHandler` pour une erreur qu'il ne reconnaît pas |
 | `503` | `Service unavailable.` | `HealthController` ; Request timeout, quand l'échéance coupe le travail de la requête |
 
@@ -490,10 +494,12 @@ Request timeout constate que l'échéance de la requête est dépassée, trouve
 niveau ERROR, garde la cause complète dans son attribut `error`.
 
 **Déconnexion du client.** Le contexte est annulé avec
-`context.Canceled`, et une requête SQL en cours s'arrête. Rien ne
-distingue ce cas d'une panne : l'erreur suit le chemin d'une erreur
-interne, journalisée au niveau ERROR avec le statut `500`, et la réponse
-ne parvient à personne.
+`context.Canceled`, et une requête SQL en cours s'arrête. Le service
+enveloppe l'erreur dans `apperror.Internal`, mais au retour, Client
+disconnect constate que le client a fermé la connexion et la place dans
+`apperror.ClientClosedRequest()`. Le statut `499` n'est pas une panne du
+serveur : `request rejected` est écrit au niveau DEBUG, l'enregistrement
+`request` montre `499`, et la réponse ne parvient à personne.
 
 ## Deux requêtes pas à pas
 

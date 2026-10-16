@@ -12,7 +12,8 @@ import (
 
 // Baseline returns the middleware every request goes through, outermost
 // first. The request logger wraps Recover so that a recovered panic is logged
-// with its final 500 status.
+// with its final 500 status. ClientDisconnect runs inside RequestTimeout: it
+// reads the request context before RequestTimeout cancels it on return.
 func Baseline(cfg config.Config, log *slog.Logger) []echo.MiddlewareFunc {
 	stack := []echo.MiddlewareFunc{
 		RequestID(),
@@ -28,5 +29,6 @@ func Baseline(cfg config.Config, log *slog.Logger) []echo.MiddlewareFunc {
 	return append(stack,
 		echomiddleware.BodyLimit(cfg.HTTP.BodyLimit),
 		RequestTimeout(cfg.HTTP.RequestTimeout),
+		ClientDisconnect(),
 	)
 }

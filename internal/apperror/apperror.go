@@ -12,6 +12,10 @@ import (
 
 const internalServerErrorMessage = "Internal server error."
 
+// StatusClientClosedRequest is nginx's non-standard status for a request
+// whose client closed the connection before the response.
+const StatusClientClosedRequest = 499
+
 type Error struct {
 	Status int
 	// Message is shown to the client: it must never contain internal details.
@@ -90,6 +94,10 @@ func Internal(cause error) *Error {
 
 func ServiceUnavailable() *Error {
 	return New(http.StatusServiceUnavailable, "Service unavailable.")
+}
+
+func ClientClosedRequest() *Error {
+	return New(StatusClientClosedRequest, "Client closed request.")
 }
 
 // FromStatus returns the generic error for status, falling back to the

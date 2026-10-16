@@ -26,6 +26,7 @@ func TestConstructors_UseTheExpectedStatus(t *testing.T) {
 		"too many requests":   {apperror.TooManyRequests(), http.StatusTooManyRequests},
 		"internal":            {apperror.Internal(errors.New("boom")), http.StatusInternalServerError},
 		"service unavailable": {apperror.ServiceUnavailable(), http.StatusServiceUnavailable},
+		"client closed":       {apperror.ClientClosedRequest(), apperror.StatusClientClosedRequest},
 	}
 
 	for name, tc := range cases {
