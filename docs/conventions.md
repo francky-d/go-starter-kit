@@ -1,8 +1,8 @@
 # Conventions
 
-Le code de ce kit est écrit pour se lire comme de l'anglais courant tout en
-restant du Go idiomatique. Cette page résume les règles. La version
-complète, qui fait référence, est le
+Le code de ce kit privilégie des noms explicites et des appels chaînés là
+où Go le permet, tout en restant du Go idiomatique. Cette page résume les
+règles. La version complète, qui fait référence, est le
 [skill conventions](../.claude/skills/conventions/SKILL.md) : les agents IA
 le chargent avant d'écrire du code, et les humains peuvent le lire comme un
 guide de style.

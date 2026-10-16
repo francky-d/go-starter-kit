@@ -5,7 +5,7 @@ PostgreSQL. Il fournit un module complet d'authentification des
 utilisateurs, une suite de tests exécutée contre une vraie base de données,
 ainsi que des instructions et des skills pour les agents de code IA.
 
-Le code se lit comme de l'anglais courant :
+Un aperçu des routes et d'un contrôleur :
 
 ```go
 api := r.Group("/api/v1")
