@@ -56,4 +56,4 @@ router -> middleware -> controller -> service -> repository -> database
   la base est concernée.
 - **Deux langues.** Le code, les commentaires et les messages de commit
   sont en anglais ; la documentation (`docs/` et `README.md`) est en
-  français.
+  français, y compris les commentaires du code des guides.

@@ -26,7 +26,9 @@ It is the entry point for a developer who has not read the code yet.
   messages, and code copied from the repository stay verbatim, comments
   included. Comments and labels in snippets written only for the
   documentation (a `# start PostgreSQL` after a shell command, the boxes
-  of a text diagram) are in French.
+  of a text diagram) are in French, and so are the comments of the code
+  samples in the guides (`docs/guides/`). Guide code that moves into the
+  kit gets English comments again.
 - **Same vocabulary everywhere.** Access token is « jeton d'accès »,
   refresh token is « jeton de rafraîchissement », rate limit is
   « limitation de débit »; endpoint, middleware and hash stay in English.

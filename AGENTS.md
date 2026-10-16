@@ -104,7 +104,9 @@ installed, `GO_IN_DOCKER=false` runs the targets directly, as CI does.
   agent files (`AGENTS.md`, `CLAUDE.md`, skills) are written in English.
   The documentation, `docs/` and `README.md`, is written in French; an
   English translation will follow. Identifiers, commands, API messages and
-  code samples inside the documentation stay as they are in the code.
+  code samples inside the documentation stay as they are in the code, with
+  one exception: in the guides (`docs/guides/`), the comments of the code
+  samples are written in French.
 - **Configuration.** Read settings only through the typed configuration in
   `internal/config`. Never call `os.Getenv` anywhere else, except in
   `internal/testutil`, which reads `TEST_DATABASE_URL`.

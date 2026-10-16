@@ -133,6 +133,7 @@ English translation will follow.
 | 41 | Remove the announcement of a future translation from the docs index: the docs describe the current state | `docs: drop the translation plan from the docs index` | done |
 | 43 | Describe the code style in the docs without claiming that it reads like English | `docs: describe the code style without the plain English claim` | done |
 | 46 | Document the request lifecycle layer by layer, and correct the statements the code contradicts | `docs: document the request lifecycle` | done |
+| 51 | Write the comments of the guide's code samples in French, and record that exception in the language rule | `docs: write the to-do guide comments in French` | done |
 
 ## Continuous integration
 

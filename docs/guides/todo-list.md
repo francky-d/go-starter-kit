@@ -10,7 +10,8 @@ départ vierge. Il a été écrit dans une copie du kit puis vérifié :
 `make lint` passe, et toute la suite passe avec le détecteur de courses
 (`go test -race -p 1 ./...`). Chaque nouveau fichier est donné en entier ;
 une modification d'un fichier existant du kit est donnée sous forme
-d'extrait.
+d'extrait. Les commentaires du code sont en français pour ce guide ; le
+code du kit, lui, est commenté en anglais.
 
 Le guide suit la procédure du
 [skill scaffold](../../.claude/skills/scaffold/SKILL.md) et les
@@ -156,7 +157,8 @@ CREATE INDEX idx_todo_lists_owner_id ON todo_lists (owner_id);
 `database/migrations/000004_create_list_members_table.up.sql`
 
 ```sql
--- The owner of a list is not a member: todo_lists.owner_id holds that role.
+-- Le propriétaire d'une liste n'en est pas membre : ce rôle est porté par
+-- todo_lists.owner_id.
 CREATE TABLE list_members (
     id         uuid PRIMARY KEY,
     list_id    uuid NOT NULL REFERENCES todo_lists (id) ON DELETE CASCADE,
@@ -208,8 +210,9 @@ suffit-il ? ». Un rôle inconnu, y compris vide, n'accorde rien.
 ```go
 package models
 
-// Role is what a user may do on a to-do list. Each role includes the rights
-// of the roles below it: an editor can do everything a viewer can.
+// Role est ce qu'un utilisateur peut faire sur une to-do list. Chaque rôle
+// inclut les droits des rôles inférieurs : un editor peut faire tout ce que
+// fait un viewer.
 type Role string
 
 const (
@@ -220,7 +223,7 @@ const (
 
 var roleRanks = map[Role]int{RoleViewer: 1, RoleEditor: 2, RoleOwner: 3}
 
-// AtLeast is false for an unknown role, so a missing role grants nothing.
+// AtLeast vaut false pour un rôle inconnu : un rôle absent n'accorde rien.
 func (r Role) AtLeast(required Role) bool {
 	rank, known := roleRanks[r]
 
@@ -242,8 +245,9 @@ type TodoList struct {
 	Base
 	OwnerID uuid.UUID `gorm:"type:uuid"`
 	Title   string
-	// Role is the role of the user the list was loaded for. The query
-	// computes it; it is not a column of todo_lists, hence read-only.
+	// Role est le rôle de l'utilisateur pour qui la liste a été
+	// chargée. La requête le calcule ; ce n'est pas une colonne de
+	// todo_lists, d'où la lecture seule.
 	Role Role `gorm:"->"`
 }
 ```
@@ -255,7 +259,8 @@ package models
 
 import "github.com/google/uuid"
 
-// ListMember gives a user a role on a list they do not own.
+// ListMember donne à un utilisateur un rôle sur une liste dont il n'est pas
+// le propriétaire.
 type ListMember struct {
 	Base
 	ListID uuid.UUID `gorm:"type:uuid"`
@@ -287,8 +292,8 @@ func (t *Task) IsCompleted() bool {
 	return t.CompletedAt != nil
 }
 
-// SetCompleted keeps the first completion time when a completed task is
-// completed again.
+// SetCompleted conserve la première date d'achèvement quand une tâche déjà
+// terminée est de nouveau marquée comme terminée.
 func (t *Task) SetCompleted(completed bool, now time.Time) {
 	switch {
 	case !completed:
@@ -305,8 +310,8 @@ Ajoutez à `internal/repositories/errors.go` un helper pour les écritures
 qui doivent toucher une ligne :
 
 ```go
-// affected reports ErrNotFound when a write matched no row, such as a record
-// another request deleted in the meantime.
+// affected renvoie ErrNotFound quand une écriture ne touche aucune ligne,
+// par exemple un enregistrement qu'une autre requête a supprimé entre-temps.
 func affected(result *gorm.DB) error {
 	if result.Error == nil && result.RowsAffected == 0 {
 		return ErrNotFound
@@ -347,8 +352,9 @@ func (r *TodoListRepository) Create(ctx context.Context, list *models.TodoList) 
 	return translate(r.db.WithContext(ctx).Create(list).Error)
 }
 
-// FindForUser loads the list with the role userID holds on it. A list that
-// does not exist and a list userID cannot see both give ErrNotFound.
+// FindForUser charge la liste avec le rôle que userID y détient. Une liste
+// qui n'existe pas et une liste que userID ne peut pas voir donnent toutes
+// deux ErrNotFound.
 func (r *TodoListRepository) FindForUser(ctx context.Context, id, userID uuid.UUID) (*models.TodoList, error) {
 	var list models.TodoList
 	err := r.visibleTo(ctx, userID).
@@ -381,7 +387,7 @@ func (r *TodoListRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return affected(r.db.WithContext(ctx).Delete(&models.TodoList{}, "id = ?", id))
 }
 
-// visibleTo matches the lists userID owns or is a member of.
+// visibleTo retient les listes dont userID est propriétaire ou membre.
 func (r *TodoListRepository) visibleTo(ctx context.Context, userID uuid.UUID) *gorm.DB {
 	return r.db.WithContext(ctx).
 		Model(&models.TodoList{}).
@@ -389,7 +395,7 @@ func (r *TodoListRepository) visibleTo(ctx context.Context, userID uuid.UUID) *g
 		Where("(todo_lists.owner_id = ? OR list_members.user_id IS NOT NULL)", userID)
 }
 
-// withRoleOf selects, next to each list, the role userID holds on it.
+// withRoleOf sélectionne, avec chaque liste, le rôle que userID y détient.
 func withRoleOf(userID uuid.UUID) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Select(
@@ -428,8 +434,8 @@ func NewListMemberRepository(db *gorm.DB) *ListMemberRepository {
 	return &ListMemberRepository{db: db}
 }
 
-// AddOrUpdate adds the member, or changes their role when they already are
-// a member of the list. It never writes the member's user.
+// AddOrUpdate ajoute le membre, ou change son rôle s'il est déjà membre de
+// la liste. Il n'écrit jamais l'utilisateur rattaché au membre.
 func (r *ListMemberRepository) AddOrUpdate(ctx context.Context, member *models.ListMember) error {
 	return translate(r.db.WithContext(ctx).
 		Omit(clause.Associations).
@@ -482,8 +488,9 @@ func (r *TaskRepository) Create(ctx context.Context, task *models.Task) error {
 	return translate(r.db.WithContext(ctx).Create(task).Error)
 }
 
-// FindInList scopes the task by its list: a task id taken from another list
-// gives ErrNotFound, even when the user can see that other list.
+// FindInList cherche la tâche dans sa liste : l'identifiant d'une tâche
+// d'une autre liste donne ErrNotFound, même si l'utilisateur voit cette
+// autre liste.
 func (r *TaskRepository) FindInList(ctx context.Context, listID, id uuid.UUID) (*models.Task, error) {
 	var task models.Task
 	if err := r.inList(ctx, listID).Where("id = ?", id).Take(&task).Error; err != nil {
@@ -508,9 +515,9 @@ func (r *TaskRepository) FindAllInList(ctx context.Context, listID uuid.UUID, pa
 	return tasks, total, translate(err)
 }
 
-// Update writes the title and the completion, including a cleared one.
-// Unlike Save, it never inserts the task again if another request deleted
-// it in the meantime.
+// Update écrit le titre et l'achèvement, y compris un achèvement effacé.
+// Contrairement à Save, il ne réinsère jamais la tâche si une autre
+// requête l'a supprimée entre-temps.
 func (r *TaskRepository) Update(ctx context.Context, task *models.Task) error {
 	return affected(r.db.WithContext(ctx).Select("title", "completed_at").Updates(task))
 }
@@ -537,8 +544,8 @@ package services
 
 import "github.com/francky-d/go-starter-kit/internal/repositories"
 
-// Page is one page of a collection, with the page number and size actually
-// applied after defaults and caps.
+// Page est une page d'une collection, avec le numéro et la taille de page
+// réellement appliqués après les valeurs par défaut et les plafonds.
 type Page[T any] struct {
 	Items  []T
 	Number int
@@ -546,7 +553,7 @@ type Page[T any] struct {
 	Total  int64
 }
 
-// findPage normalises the requested page, then runs find with it.
+// findPage normalise la page demandée, puis l'utilise pour exécuter find.
 func findPage[T any](page, perPage int, find func(page, perPage int) ([]T, int64, error)) (Page[T], error) {
 	page, perPage = repositories.NormalizePage(page, perPage)
 
@@ -578,8 +585,9 @@ import (
 	"github.com/francky-d/go-starter-kit/internal/repositories"
 )
 
-// ListAccess decides what a user may do on a to-do list. Every service of
-// the to-do feature asks it first, so no action skips the check.
+// ListAccess décide de ce qu'un utilisateur peut faire sur une to-do list.
+// Chaque service de la fonctionnalité l'interroge en premier : aucune action
+// n'échappe à la vérification.
 type ListAccess struct {
 	lists *repositories.TodoListRepository
 }
@@ -588,9 +596,9 @@ func NewListAccess(lists *repositories.TodoListRepository) *ListAccess {
 	return &ListAccess{lists: lists}
 }
 
-// Require returns the list when userID holds at least the required role on
-// it. A user with no access gets a 404, so a stranger cannot tell whether
-// the list exists; a member whose role is too weak gets a 403.
+// Require renvoie la liste quand userID y détient au moins le rôle requis.
+// Un utilisateur sans accès reçoit un 404 et ne peut donc pas savoir si la
+// liste existe ; un membre dont le rôle est insuffisant reçoit un 403.
 func (a *ListAccess) Require(ctx context.Context, userID, listID uuid.UUID, required models.Role) (*models.TodoList, error) {
 	list, err := a.lists.FindForUser(ctx, listID, userID)
 	if errors.Is(err, repositories.ErrNotFound) {
@@ -669,7 +677,7 @@ func (s *TodoListService) Show(ctx context.Context, userID, listID uuid.UUID) (*
 	return s.access.Require(ctx, userID, listID, models.RoleViewer)
 }
 
-// Delete removes the list with its tasks and members.
+// Delete supprime la liste avec ses tâches et ses membres.
 func (s *TodoListService) Delete(ctx context.Context, userID, listID uuid.UUID) error {
 	if _, err := s.access.Require(ctx, userID, listID, models.RoleOwner); err != nil {
 		return err
@@ -717,7 +725,7 @@ type CreateTaskInput struct {
 	Title  string
 }
 
-// UpdateTaskInput leaves a field unchanged when it is nil.
+// UpdateTaskInput laisse inchangé un champ qui vaut nil.
 type UpdateTaskInput struct {
 	UserID    uuid.UUID
 	ListID    uuid.UUID
@@ -781,8 +789,8 @@ func (s *TaskService) Delete(ctx context.Context, userID, listID, taskID uuid.UU
 	return nil
 }
 
-// editableTask checks the role before looking the task up, so a viewer gets
-// the same 403 whether the task exists or not.
+// editableTask vérifie le rôle avant de chercher la tâche : un viewer
+// reçoit le même 403, que la tâche existe ou non.
 func (s *TaskService) editableTask(ctx context.Context, userID, listID, taskID uuid.UUID) (*models.Task, error) {
 	if _, err := s.access.Require(ctx, userID, listID, models.RoleEditor); err != nil {
 		return nil, err
@@ -853,8 +861,8 @@ func (s *MemberService) List(ctx context.Context, userID, listID uuid.UUID) ([]m
 	return members, nil
 }
 
-// Share gives the user behind an email a role on the list, or changes the
-// role they already have.
+// Share donne un rôle sur la liste à l'utilisateur qui possède l'email, ou
+// change le rôle qu'il a déjà.
 func (s *MemberService) Share(ctx context.Context, input ShareListInput) (*models.ListMember, error) {
 	if _, err := s.access.Require(ctx, input.UserID, input.ListID, models.RoleOwner); err != nil {
 		return nil, err
@@ -873,7 +881,8 @@ func (s *MemberService) Share(ctx context.Context, input ShareListInput) (*model
 	return member, nil
 }
 
-// Remove lets the owner remove any member, and any member leave the list.
+// Remove permet au propriétaire de retirer n'importe quel membre, et à tout
+// membre de quitter la liste.
 func (s *MemberService) Remove(ctx context.Context, userID, listID, memberID uuid.UUID) error {
 	list, err := s.access.Require(ctx, userID, listID, models.RoleViewer)
 	if err != nil {
@@ -891,10 +900,10 @@ func (s *MemberService) Remove(ctx context.Context, userID, listID, memberID uui
 	return nil
 }
 
-// recipient tells the owner when an email has no account. Like
-// registration, this reveals which emails have an account, and the share
-// then shows the account's name, but only to a signed-in user sharing their
-// own list, under a rate limit.
+// recipient signale au propriétaire qu'un email n'a pas de compte. Comme
+// l'inscription, cela révèle quels emails ont un compte, et le partage
+// affiche ensuite le nom du compte, mais seulement à un utilisateur
+// connecté qui partage sa propre liste, sous limitation de débit.
 func (s *MemberService) recipient(ctx context.Context, input ShareListInput) (*models.User, error) {
 	user, err := s.users.FindByEmail(ctx, input.Email)
 	if errors.Is(err, repositories.ErrNotFound) {
@@ -933,8 +942,9 @@ import (
 	"github.com/francky-d/go-starter-kit/internal/apperror"
 )
 
-// PathID reads a UUID path parameter. A malformed id answers 404, like an id
-// that matches nothing, so the two cannot be told apart.
+// PathID lit un paramètre de chemin UUID. Un identifiant mal formé répond
+// 404, comme un identifiant qui ne correspond à rien : les deux cas sont
+// indiscernables.
 func PathID(c echo.Context, name string) (uuid.UUID, error) {
 	id, err := uuid.Parse(c.Param(name))
 	if err != nil {
@@ -944,8 +954,8 @@ func PathID(c echo.Context, name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-// PathIDs reads two UUID path parameters, such as a list and one of its
-// tasks.
+// PathIDs lit deux paramètres de chemin UUID, par exemple une liste et l'une
+// de ses tâches.
 func PathIDs(c echo.Context, first, second string) (uuid.UUID, uuid.UUID, error) {
 	firstID, err := PathID(c, first)
 	if err != nil {
@@ -969,9 +979,9 @@ nommer les champs dans les erreurs de validation.
 ```go
 package requests
 
-// Pagination is the query string of a paginated collection. A missing value
-// falls back to the default page and page size. The json tags only name the
-// fields in validation errors.
+// Pagination est la query string d'une collection paginée. Une valeur
+// absente prend la page et la taille de page par défaut. Les tags json ne
+// servent qu'à nommer les champs dans les erreurs de validation.
 type Pagination struct {
 	Page    int `json:"page" query:"page" validate:"omitempty,min=1"`
 	PerPage int `json:"per_page" query:"per_page" validate:"omitempty,min=1,max=100"`
@@ -991,14 +1001,15 @@ type CreateTask struct {
 	Title string `json:"title" validate:"required,max=200"`
 }
 
-// UpdateTask uses pointers so that a field the client leaves out stays
-// unchanged, while "completed": false reopens the task.
+// UpdateTask utilise des pointeurs : un champ que le client omet reste
+// inchangé, tandis que "completed": false rouvre la tâche.
 type UpdateTask struct {
 	Title     *string `json:"title" validate:"omitnil,min=1,max=200"`
 	Completed *bool   `json:"completed"`
 }
 
-// ShareTodoList cannot grant the owner role: a list has exactly one owner.
+// ShareTodoList ne peut pas accorder le rôle owner : une liste a exactement
+// un propriétaire.
 type ShareTodoList struct {
 	Email string `json:"email" validate:"required,email,max=254"`
 	Role  string `json:"role" validate:"required,oneof=viewer editor"`
@@ -1012,8 +1023,8 @@ type ShareTodoList struct {
 ```go
 package resources
 
-// collection shapes every record of a list. An empty list stays an empty
-// JSON array, never null.
+// collection met en forme chaque élément d'une slice. Une slice vide reste
+// un tableau JSON vide, jamais null.
 func collection[Record, Resource any](records []Record, shape func(*Record) Resource) []Resource {
 	shaped := make([]Resource, 0, len(records))
 	for i := range records {
@@ -1079,8 +1090,8 @@ func NewTasks(tasks []models.Task) []Task {
 	return collection(tasks, NewTask)
 }
 
-// ListMember leaves out the email: members of a shared list see each
-// other's names, not their addresses.
+// ListMember omet l'email : les membres d'une liste partagée voient les noms
+// des uns et des autres, pas leurs adresses.
 type ListMember struct {
 	UserID string `json:"user_id"`
 	Name   string `json:"name"`
@@ -1422,8 +1433,9 @@ puis déclarez les routes à la fin de `Register`. Toutes sont derrière
 
 	lists.
 		Get("/:list/members", d.Members.List).
-		// Sharing tells whether an email has an account, like registration,
-		// so it is rate limited too.
+		// Le partage révèle si un email a un compte, comme
+		// l'inscription : il est donc lui aussi soumis à la
+		// limitation de débit.
 		Put("/:list/members", d.Members.Share, d.SharingRateLimit).
 		Delete("/:list/members/:user", d.Members.Remove)
 ```
@@ -1432,8 +1444,8 @@ Dans `internal/app/dependencies.go`, construisez les contrôleurs. Ils
 partagent un seul `ListAccess` :
 
 ```go
-// todoControllers share one ListAccess, so every to-do action checks rights
-// the same way.
+// todoControllers partagent un seul ListAccess : chaque action sur les to-do
+// lists vérifie les droits de la même façon.
 func (a *App) todoControllers(users *repositories.UserRepository) (*controllers.TodoListController, *controllers.TaskController, *controllers.MemberController) {
 	lists := repositories.NewTodoListRepository(a.database)
 	access := services.NewListAccess(lists)
@@ -1490,7 +1502,7 @@ func (c *Client) Delete(path string) *Response {
 ```
 
 ```go
-// Meta decodes the meta member of a paginated response into target.
+// Meta décode le membre meta d'une réponse paginée dans target.
 func (r *Response) Meta(target any) {
 	r.t.Helper()
 	var envelope struct {
@@ -1729,8 +1741,8 @@ func share(t *testing.T, owner *testutil.Client, listID, email, role string) {
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 }
 
-// sharedList is a list with one task, shared with an editor and a viewer;
-// a fourth user, the stranger, has no access to it.
+// sharedList est une liste avec une tâche, partagée avec un editor et un
+// viewer ; un quatrième utilisateur, stranger, n'y a pas accès.
 type sharedList struct {
 	listID  string
 	taskID  string
@@ -1792,8 +1804,9 @@ func (s statuses) byActor() map[string]int {
 	return map[string]int{"owner": s.owner, "editor": s.editor, "viewer": s.viewer, "stranger": s.stranger}
 }
 
-// Each case runs once per actor, on a fresh shared list: the stranger always
-// gets a 404, never a 403, so a list's existence never leaks.
+// Chaque cas s'exécute une fois par acteur, sur une nouvelle liste
+// partagée : stranger reçoit toujours un 404, jamais un 403, si bien que
+// l'existence d'une liste ne fuit jamais.
 func TestTodoLists_GiveEachRoleItsRights(t *testing.T) {
 	cases := []struct {
 		action string
@@ -2093,6 +2106,11 @@ Lancez le package qui change, depuis `make shell` :
 
 ```bash
 go test ./internal/http/controllers/...
+```
+
+puis toute la suite, depuis votre terminal :
+
+```bash
 make lint
 make test
 ```
