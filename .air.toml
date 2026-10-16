@@ -1,5 +1,6 @@
-# Live reload for local development: `make dev` rebuilds and restarts the
-# API whenever a Go file, a migration or the .env file changes.
+# Live reload for local development, run by `make dev` in the api-dev
+# container: rebuilds and restarts the API whenever a Go file, a migration or
+# the .env file changes.
 root = "."
 tmp_dir = "tmp"
 

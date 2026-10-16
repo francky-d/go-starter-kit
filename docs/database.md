@@ -6,17 +6,20 @@ base, voir [switching-database.md](switching-database.md).
 
 ## Base locale
 
-`docker-compose.yml` lance PostgreSQL pour le développement et les tests :
+`docker-compose.yml` lance PostgreSQL pour le développement et les tests.
+`make dev` et les cibles Go le démarrent au besoin ; ces commandes le
+pilotent directement :
 
 ```bash
 make docker-up      # démarre et attend que la base soit prête
 make docker-down    # arrête les conteneurs, conserve les données
-make docker-reset   # arrête les conteneurs et supprime les données
+make docker-reset   # arrête les conteneurs, supprime les données et les caches Go
 ```
 
 | Réglage | Valeur |
 | --- | --- |
 | Hôte et port | `localhost:5432`, joignable depuis cette machine seulement |
+| Depuis les conteneurs | `postgres:5432` |
 | Utilisateur et mot de passe | `app` / `app` |
 | Base de l'application | `app` |
 | Base de test | `app_test` |
@@ -28,17 +31,21 @@ volume avant l'existence de ce script, lancez `make docker-reset`.
 Ces identifiants servent uniquement en local.
 
 Pour utiliser un autre port sur l'hôte, réglez `DB_FORWARD_PORT` (dans
-`.env` ou le shell) et changez le port dans `DATABASE_URL` et
-`TEST_DATABASE_URL` en conséquence.
+`.env` ou le shell). Les conteneurs n'en dépendent pas ; avec Go sur
+l'hôte (`GO_IN_DOCKER=false`), changez aussi le port dans `DATABASE_URL` et
+`TEST_DATABASE_URL`.
 
 ## Base de test
 
-Les tests se connectent par défaut à `app_test` sur `localhost:5432`.
-Réglez `TEST_DATABASE_URL` pour utiliser une autre base, par exemple en CI
-ou avec un autre port :
+Dans le conteneur `go`, `docker-compose.yml` fixe `TEST_DATABASE_URL` sur
+la base `app_test` du service `postgres`.
+
+Avec Go sur l'hôte, les tests se connectent par défaut à `app_test` sur
+`localhost:5432`. Réglez `TEST_DATABASE_URL` pour utiliser une autre base,
+par exemple en CI ou avec un autre port :
 
 ```bash
-TEST_DATABASE_URL=postgres://app:app@localhost:5433/app_test?sslmode=disable make test
+GO_IN_DOCKER=false TEST_DATABASE_URL=postgres://app:app@localhost:5433/app_test?sslmode=disable make test
 ```
 
 ## Migrations
@@ -55,6 +62,10 @@ make migrate-down                                # annule la dernière migration
 make migrate-version                             # affiche la version actuelle
 make migrate-create name=create_posts_table      # crée une paire up/down vide
 ```
+
+En développement, le conteneur `api-dev` de `make dev` applique les
+migrations en attente à son démarrage, jamais lors d'un rechargement :
+appliquez une nouvelle migration avec `make migrate-up` une fois écrite.
 
 Les mêmes commandes existent dans le binaire compilé, par exemple pour un
 job de déploiement : `migrate up`, `migrate down [steps]`,
@@ -77,7 +88,7 @@ séparée.
 
 Si une migration échoue à mi-chemin, la version est marquée *dirty* et plus
 rien ne s'exécute. Réparez la base à la main, puis indiquez la version
-atteinte :
+atteinte, depuis `make shell` :
 
 ```bash
 go run ./cmd/migrate version     # 2 (dirty: ...)

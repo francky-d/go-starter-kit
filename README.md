@@ -58,30 +58,25 @@ func (ac *AuthController) Login(c echo.Context) error {
   l'environnement ou un fichier `.env`.
 - **Tests :** tests unitaires, de repository, d'endpoint et de bout en bout
   contre une vraie base PostgreSQL ; rapport de couverture.
-- **Outillage :** Makefile, Docker Compose, une image distroless de 28 Mo,
-  rechargement à chaud, `staticcheck`, CI pour GitHub Actions et GitLab CI.
+- **Outillage :** un environnement de développement entièrement en
+  conteneurs, avec rechargement à chaud ; Makefile, une image distroless de
+  28 Mo, `staticcheck`, CI pour GitHub Actions et GitLab CI.
 - **Prêt pour les agents :** `AGENTS.md`, `CLAUDE.md` et des skills qui
   apprennent à un agent IA les conventions, l'ajout d'une ressource, la
   revue du code, la mise à jour de la documentation et les commits.
 
 ## Démarrage rapide
 
-Prérequis : Go 1.26 ou plus récent, Docker avec Compose v2, `make`.
+Prérequis : Docker avec Compose v2, et `make`. Go n'a pas besoin d'être
+installé : tout s'exécute dans des conteneurs.
 
 ```bash
 git clone https://github.com/francky-d/go-starter-kit.git
 cd go-starter-kit
-cp .env.example .env
+make dev    # crée .env, démarre PostgreSQL et l'API sur :8080, avec rechargement à chaud
 ```
 
-Renseignez `JWT_SECRET` dans `.env` avec la sortie de
-`openssl rand -hex 32`, puis :
-
-```bash
-make docker-up      # démarre PostgreSQL
-make migrate-up     # crée le schéma
-make run            # démarre l'API sur :8080
-```
+Dans un autre terminal :
 
 ```bash
 curl -s http://localhost:8080/api/v1/auth/register \

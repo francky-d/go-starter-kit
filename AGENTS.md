@@ -36,7 +36,7 @@ without `Authenticated`: a wiring bug, not a client error).
 | Tests | `testing`, `github.com/stretchr/testify`, a real PostgreSQL database |
 | Linting | `gofmt`, `go vet`, `staticcheck` |
 | Container | Multi-stage `Dockerfile`, distroless runtime image |
-| Live reload | Air, pinned in the `Makefile` and run with `go run` |
+| Local environment | Docker Compose: PostgreSQL, the API with live reload (Air, pinned in `docker-compose.yml`), and a `go` container that runs every Go target. Docker and make are the only requirements. |
 | Continuous integration | GitHub Actions and GitLab CI, kept equivalent: build, lint, tests with the race detector, Docker image build |
 
 Do not add, remove or upgrade a dependency without the user's approval.
@@ -72,23 +72,27 @@ create a new top-level folder without the user's approval.
 
 ## Commands
 
-Run `make` to list every command.
+Run `make` to list every command. The Go targets run in the `go` container
+of `docker-compose.yml`, as the host user. For a Go command without a
+target, such as testing one package, use `make shell`. Where Go 1.26 is
+installed, `GO_IN_DOCKER=false` runs the targets directly, as CI does.
 
 | Command | Effect |
 | --- | --- |
-| `make run` | Run the API. |
-| `make dev` | Run the API with live reload: rebuild and restart on every Go or SQL change. |
+| `make dev` | Start PostgreSQL and the API with live reload, in containers. Creates `.env` on first run. |
+| `make shell` | Open a shell in the `go` container, to run any Go command. |
+| `make run` | Apply pending migrations, then run the API without live reload. |
 | `make build` | Compile the API and the migrate command into `bin/`. |
 | `make docker-up` | Start PostgreSQL and wait until it is ready. |
-| `make docker-full` | Build the API image and start it with PostgreSQL. Needs `JWT_SECRET`. |
+| `make docker-full` | Build the production API image and start it with PostgreSQL. Creates `.env` if needed. |
 | `make docker-down` | Stop the containers, keeping the database data. |
-| `make docker-reset` | Stop the containers and delete the database data. |
+| `make docker-reset` | Stop the containers and delete the database data and the Go caches. |
 | `make docker-logs` | Follow the logs of the running containers. |
 | `make migrate-up` | Apply every pending migration. |
 | `make migrate-down` | Roll back the last migration. |
 | `make migrate-version` | Print the current migration version. |
 | `make migrate-create name=...` | Create an empty up/down migration pair. |
-| `make test` | Run the test suite. Needs `make docker-up` first. |
+| `make test` | Run the test suite. Starts PostgreSQL if needed. |
 | `make test-cover` | Run the test suite with coverage; writes `coverage.out` and `coverage.html`. |
 | `make lint` | Check `gofmt` and `go.mod`, then run `go vet` and `staticcheck`. Skips hidden directories. |
 | `make fmt` | Format every Go file outside hidden directories. |
@@ -112,8 +116,9 @@ Run `make` to list every command.
   feature or fix shipped without its documentation update is unfinished
   work. The documentation change goes in the same commit as the code.
 - **Tests.** Every change is covered by a test. Run the narrowest package
-  first (`go test ./internal/<package>/...`), then the whole suite before
-  committing. Never delete or skip a test without the user's approval.
+  first (`go test ./internal/<package>/...` in `make shell`), then the whole
+  suite (`make test`) before committing. Never delete or skip a test
+  without the user's approval.
 - **Existing patterns first.** Before writing a file, read its siblings and
   follow their structure and naming. Reuse an existing helper before writing
   a new one.

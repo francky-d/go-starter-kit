@@ -31,6 +31,8 @@ lint-and-test:
     POSTGRES_PASSWORD: app
     POSTGRES_DB: app_test
     TEST_DATABASE_URL: postgres://app:app@postgres:5432/app_test?sslmode=disable
+    # Go is installed in the image: make runs it directly, not in Docker.
+    GO_IN_DOCKER: "false"
     # GitLab only caches paths inside the project directory.
     GOMODCACHE: $CI_PROJECT_DIR/.go/mod
     GOCACHE: $CI_PROJECT_DIR/.go/build

@@ -11,13 +11,20 @@ autre package reçoit les valeurs dont il a besoin par son constructeur.
    utilisée. Le fichier est facultatif.
 3. Sinon, la valeur par défaut indiquée ci-dessous s'applique.
 
-Partez du modèle :
+`make dev` crée `.env` à partir du modèle `.env.example` au premier
+lancement, avec un `JWT_SECRET` aléatoire. Pour partir du modèle à la
+main :
 
 ```bash
 cp .env.example .env
 ```
 
 `.env` est ignoré par git. Ne commitez jamais de vrais secrets.
+
+Dans les conteneurs de développement, `docker-compose.yml` fixe
+`DATABASE_URL`, `HTTP_PORT` et `DB_AUTO_MIGRATE` : ces valeurs l'emportent
+sur `.env` (voir
+[getting-started.md](getting-started.md#configuration-dans-les-conteneurs)).
 
 ## Validation
 
@@ -106,7 +113,7 @@ Utilisez `sslmode=require` (ou plus strict) en production.
 | Variable | Défaut | Description |
 | --- | --- | --- |
 | `BCRYPT_COST` | `12` | Facteur de coût bcrypt des hash de mots de passe, de 4 à 16. Chaque cran double le temps de hachage et de vérification d'un mot de passe ; gardez au moins 12 en production. |
-| `JWT_SECRET` | aucun, obligatoire | Clé qui signe les jetons d'accès, d'au moins 32 octets et aléatoire. Générez-la avec `openssl rand -hex 32` et gardez les 64 caractères hexadécimaux ; utilisez-en une différente par environnement et ne la commitez jamais. La changer invalide tous les jetons d'accès déjà délivrés. |
+| `JWT_SECRET` | aucun, obligatoire | Clé qui signe les jetons d'accès, d'au moins 32 octets et aléatoire. `make dev` en écrit une dans le `.env` qu'il crée ; ailleurs, générez-la avec `openssl rand -hex 32` et gardez les 64 caractères hexadécimaux ; utilisez-en une différente par environnement et ne la commitez jamais. La changer invalide tous les jetons d'accès déjà délivrés. |
 | `JWT_ISSUER` | `go-starter-kit` | Écrit dans chaque jeton d'accès ; un jeton d'un autre émetteur est refusé. |
 | `ACCESS_TOKEN_LIFETIME` | `15m` | Durée de validité d'un jeton d'accès. Gardez-la courte : un jeton d'accès ne peut pas être révoqué avant son expiration. |
 | `AUTH_CREDENTIALS_RATE_LIMIT_PER_MINUTE` | `10` | Requêtes par minute que chaque IP client peut envoyer à l'inscription et à la connexion réunies. Voir [authentication.md](authentication.md#limitation-de-débit). |

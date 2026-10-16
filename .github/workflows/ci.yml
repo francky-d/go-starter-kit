@@ -40,6 +40,8 @@ jobs:
 
     env:
       TEST_DATABASE_URL: postgres://app:app@localhost:5432/app_test?sslmode=disable
+      # Go is installed on the runner: make runs it directly, not in Docker.
+      GO_IN_DOCKER: "false"
 
     steps:
       - uses: actions/checkout@v7

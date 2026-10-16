@@ -80,9 +80,9 @@ Every group must leave the repository green. For any group that touches Go
 code, run:
 
 ```bash
-go build ./...
+make build            # compile the API and the migrate command
 make lint             # gofmt check, go vet, staticcheck
-make test             # run the narrower package first if you are iterating
+make test             # iterating? run the narrower package first, in make shell
 ```
 
 Never commit a red build. Never use `--no-verify`.

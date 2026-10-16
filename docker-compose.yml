@@ -23,6 +23,50 @@ services:
       timeout: 5s
       retries: 10
 
+  # Go, for the Makefile: every Go target runs here, so Docker and make are
+  # the only requirements. `make shell` opens a shell here.
+  go:
+    image: golang:1.26
+    profiles: [tools]
+    init: true
+    # The host user, so the files written into the project stay yours on
+    # Linux. The Makefile sets both; 1000 is the usual first user on Linux.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # The API reads the other settings, JWT_SECRET included, from .env.
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/app?sslmode=disable
+      TEST_DATABASE_URL: postgres://app:app@postgres:5432/app_test?sslmode=disable
+      # The Go caches live in the go volume, writable by any user.
+      XDG_CACHE_HOME: /go/.cache
+      # Go is installed here: the Makefile runs it directly.
+      GO_IN_DOCKER: "false"
+    volumes:
+      - .:/app
+      - go:/go
+
+  # The API with live reload, started by `make dev`. Pending migrations are
+  # applied once, when the container starts: a reload never applies a
+  # migration that is still being written.
+  api-dev:
+    extends: go
+    profiles: [dev]
+    environment:
+      HTTP_PORT: "8080"
+      DB_AUTO_MIGRATE: "false"
+    command: >-
+      sh -c "go install github.com/air-verse/air@v1.67.4
+      && go run ./cmd/migrate up
+      && exec air"
+    # Longer than HTTP_SHUTDOWN_TIMEOUT (10s by default): on stop, requests in
+    # flight finish before the container is killed.
+    stop_grace_period: 15s
+    ports:
+      - "127.0.0.1:${API_FORWARD_PORT:-8080}:8080"
+
   # The API in a container, built from the Dockerfile: make docker-full.
   # The default `make docker-up` starts PostgreSQL only.
   api:
@@ -42,3 +86,4 @@ services:
 
 volumes:
   postgres-data:
+  go:

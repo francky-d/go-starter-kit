@@ -134,3 +134,9 @@ English translation will follow.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 42 | GitLab CI pipeline equivalent to the GitHub Actions workflow | `ci: add GitLab CI pipeline` | done |
+
+## Development environment
+
+| # | Task | Commit | Status |
+| --- | --- | --- | --- |
+| 44 | Development environment in containers: Docker and make as the only requirements, `make dev` runs PostgreSQL and the API with live reload, every Go target runs in a `go` container | `build: run the development environment in containers` | done |

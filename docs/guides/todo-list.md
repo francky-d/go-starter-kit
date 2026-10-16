@@ -2089,7 +2089,7 @@ func TestMembers_AMemberCanLeaveButTheOwnerIsNotAMember(t *testing.T) {
 }
 ```
 
-Lancez le package qui change, puis toute la suite :
+Lancez le package qui change, depuis `make shell` :
 
 ```bash
 go test ./internal/http/controllers/...
@@ -2099,9 +2099,12 @@ make test
 
 ## Étape 10 : essayer avec curl
 
+Appliquez les migrations, puis démarrez l'API si `make dev` ne tourne pas
+déjà :
+
 ```bash
 make migrate-up
-make run
+make dev
 ```
 
 Dans un autre terminal, inscrivez trois utilisateurs et gardez leurs

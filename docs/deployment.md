@@ -38,8 +38,10 @@ curl -s http://localhost:8080/health
 
 Le conteneur de l'API applique les migrations au démarrage
 (`DB_AUTO_MIGRATE`) et lit `JWT_SECRET` dans `.env` ou le shell ; sans
-lui, l'API s'arrête avec une erreur de configuration. Elle écoute sur
-`localhost:8080` ; réglez `API_FORWARD_PORT` pour utiliser un autre port.
+lui, l'API s'arrête avec une erreur de configuration. `make docker-full`
+crée `.env` s'il n'existe pas, avec un `JWT_SECRET` aléatoire. L'API
+écoute sur `localhost:8080` ; réglez `API_FORWARD_PORT` pour utiliser un
+autre port.
 `make docker-logs` suit les logs des deux conteneurs, et `make docker-down`
 les arrête.
 
@@ -47,8 +49,8 @@ L'image n'a pas de health check : `make docker-full` rend la main dès que
 le processus de l'API a démarré, pas dès qu'il sert des requêtes. Vérifiez
 `/health` comme ci-dessus.
 
-Au quotidien, lancez PostgreSQL seul avec `make docker-up` et l'API sur
-l'hôte avec `make run`.
+Au quotidien, préférez `make dev` : l'API tourne avec rechargement à chaud
+(voir [getting-started.md](getting-started.md#rechargement-à-chaud)).
 
 ## Migrations en production
 

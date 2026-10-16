@@ -8,19 +8,26 @@ simulée.
 ## Lancer les tests
 
 ```bash
-make docker-up     # une fois : démarre PostgreSQL
-make test          # toute la suite
+make test          # toute la suite ; démarre PostgreSQL si besoin
 make test-cover    # toute la suite, avec couverture
-go test ./internal/repositories/...   # un seul package pendant le développement
 ```
 
-`make test` lance `go test -p 1 ./...`. Tous les packages partagent la même
-base de test : les packages s'exécutent donc un par un ; les tests d'un
-même package s'exécutent toujours dans l'ordre.
+Pendant le développement, lancez un seul package depuis un shell dans le
+conteneur `go` :
 
-Les tests se connectent à `app_test` sur `localhost:5432`. Réglez
-`TEST_DATABASE_URL` pour utiliser une autre base (voir
-[database.md](database.md#base-de-test)).
+```bash
+make shell
+go test ./internal/repositories/...
+```
+
+`make test` lance `go test -p 1 ./...` dans le conteneur `go` (voir
+[getting-started.md](getting-started.md#commandes-go-dans-un-conteneur)).
+Tous les packages partagent la même base de test : les packages
+s'exécutent donc un par un ; les tests d'un même package s'exécutent
+toujours dans l'ordre.
+
+Les tests se connectent à la base `app_test` du conteneur PostgreSQL. Voir
+[database.md](database.md#base-de-test) pour en utiliser une autre.
 
 ## Couverture
 
