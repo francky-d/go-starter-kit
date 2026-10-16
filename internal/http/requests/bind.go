@@ -6,6 +6,7 @@ package requests
 import (
 	"context"
 	"errors"
+	"io"
 	"mime"
 	"net/http"
 	"reflect"
@@ -47,6 +48,10 @@ func Bind(c echo.Context, input any) error {
 		return malformedRequest(err)
 	}
 
+	if err := drainBody(c.Request()); err != nil {
+		return malformedRequest(err)
+	}
+
 	return Validate(c.Request().Context(), input)
 }
 
@@ -80,8 +85,27 @@ func Validate(ctx context.Context, input any) error {
 	return nil
 }
 
+// drainBody reads what the JSON decoder left after the value. Without a
+// Content-Length, the body limit counts bytes as they are read, so a body
+// over HTTP_BODY_LIMIT fails here even when the value itself fits. Without
+// the baseline body limit, only HTTP_READ_TIMEOUT would bound this read.
+func drainBody(request *http.Request) error {
+	if request.ContentLength == 0 {
+		return nil
+	}
+
+	_, err := io.Copy(io.Discard, request.Body)
+
+	return err
+}
+
 // malformedRequest keeps the decoder's message out of the response: it can
-// quote the request body.
+// quote the request body. A body over HTTP_BODY_LIMIT keeps its 413.
 func malformedRequest(err error) error {
+	var httpErr *echo.HTTPError
+	if errors.As(err, &httpErr) && httpErr.Code == http.StatusRequestEntityTooLarge {
+		return apperror.FromStatus(http.StatusRequestEntityTooLarge).Wrap(err)
+	}
+
 	return apperror.BadRequest("Malformed request body.").Wrap(err)
 }

@@ -41,7 +41,7 @@ Chaque couche a un contrat court :
 | --- | --- | --- |
 | Middleware de route | `echo.Context` | Appelle la suite, ou renvoie une `*apperror.Error` (`401`, `429`). |
 | Contrôleur | `echo.Context` | Une réponse écrite par `respond`, ou l'erreur reçue, inchangée. |
-| `requests.Bind` | `echo.Context` et un pointeur vers la struct d'entrée | `nil`, ou une `*apperror.Error` (`400`, `415`, `422`). |
+| `requests.Bind` | `echo.Context` et un pointeur vers la struct d'entrée | `nil`, ou une `*apperror.Error` (`400`, `413`, `415`, `422`). |
 | Service | `ctx` et des valeurs Go, jamais `echo.Context` | Des modèles ou ses propres structs, ou une `*apperror.Error`. |
 | Repository | `ctx` et des valeurs Go | Des modèles, ou une sentinelle (`ErrNotFound`, `ErrDuplicate`, `ErrInvalid`) qui enveloppe l'erreur de GORM, ou l'erreur brute. |
 
@@ -210,8 +210,8 @@ requête, et répond `503 Service unavailable.` si le ping échoue.
 ### `requests.Bind`
 
 [bind.go](../internal/http/requests/bind.go) vérifie que le corps est du
-JSON, appelle le binder d'Echo, puis valide la struct d'après ses tags
-`validate`. Chaque endpoint déclare sa
+JSON, appelle le binder d'Echo, lit le reste du corps, puis valide la
+struct d'après ses tags `validate`. Chaque endpoint déclare sa
 propre struct dans [requests](../internal/http/requests/) : un client ne
 peut pas remplir un champ que l'endpoint n'attend pas.
 
@@ -223,7 +223,7 @@ seulement, puis le corps JSON (tags `json`).
 | --- | --- |
 | Corps vide (`Content-Length: 0`) | Rien n'est lié ; la validation signale les champs obligatoires : `422`. |
 | JSON invalide, ou valeur du mauvais type | `400 Malformed request body.` Le message du parseur, qui peut citer le corps, ne va que dans les logs. |
-| Corps sans `Content-Length` qui dépasse `HTTP_BODY_LIMIT` pendant la lecture | `400 Malformed request body.`, et non `413` : Body limit ne voit pas la taille avant la lecture. |
+| Corps sans `Content-Length` qui dépasse `HTTP_BODY_LIMIT` | `413 Request Entity Too Large.` Body limit compte les octets pendant la lecture, et `requests.Bind` lit le corps jusqu'au bout, même quand la valeur JSON tient dans la limite. |
 | Corps non vide envoyé sans `Content-Type` `application/json` (un paramètre comme `charset` est accepté) | `415 Unsupported Media Type.` |
 | Une règle `validate` n'est pas respectée | `422 The given data was invalid.`, avec les messages par champ dans `errors`. |
 | L'entrée n'est pas une struct | `500` : c'est une erreur de programmation. |
@@ -452,7 +452,7 @@ relier à une requête, utilisez l'horodatage et `user_id`.
 | `404` | `Resource not found.` | Le routeur d'Echo, pour une route inconnue |
 | `405` | `Method Not Allowed.` | Le routeur d'Echo, avec l'en-tête `Allow` |
 | `409` | `Unable to register with the provided details.` | `AuthService.Register` |
-| `413` | `Request Entity Too Large.` | Body limit |
+| `413` | `Request Entity Too Large.` | Body limit ; `requests.Bind` pour un corps sans `Content-Length` |
 | `415` | `Unsupported Media Type.` | `requests.Bind` |
 | `422` | `The given data was invalid.` | `requests.Bind` ; `AuthService.Register` pour un mot de passe de plus de 72 octets |
 | `429` | `Too many requests.` | `RateLimit`, avec `Retry-After: 60` |

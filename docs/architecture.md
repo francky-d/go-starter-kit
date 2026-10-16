@@ -17,7 +17,7 @@ traverse le code, et où vit chaque responsabilité.
 | `internal/routes` | Déclare toutes les routes en un seul endroit. |
 | `internal/http/middleware` | Les middleware : la pile de base que traverse chaque requête, la politique d'IP client, l'authentification bearer et la limitation de débit. |
 | `internal/http/router` | Surcouche fluide du routage d'Echo : groupes, middleware et routes déclarés en chaîne. |
-| `internal/http/requests` | Les structs de requête avec leurs règles de validation, et `Bind`, qui transforme une entrée invalide en `400`, `415` ou `422`. |
+| `internal/http/requests` | Les structs de requête avec leurs règles de validation, et `Bind`, qui transforme une entrée invalide en `400`, `413`, `415` ou `422`. |
 | `internal/http/resources` | Mettent en forme les modèles dans le JSON que reçoivent les clients ; un modèle n'est jamais sérialisé directement, si bien qu'une nouvelle colonne ne fuit jamais par accident. |
 | `internal/http/controllers` | Les handlers HTTP. Un contrôleur renvoie une réponse ou une erreur, jamais un corps d'erreur. |
 | `internal/http/respond` | Les enveloppes de succès et le gestionnaire d'erreurs central. |
