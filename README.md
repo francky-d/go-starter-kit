@@ -119,7 +119,8 @@ docs/                  documentation
 | Document | Contenu |
 | --- | --- |
 | [Prise en main](docs/getting-started.md) | Installation, commandes courantes, rechargement à chaud. |
-| [Architecture](docs/architecture.md) | Packages, démarrage et arrêt, cycle de vie d'une requête, routes. |
+| [Architecture](docs/architecture.md) | Packages, démarrage et arrêt, routes. |
+| [Cycle de vie d'une requête](docs/request-lifecycle.md) | Le trajet d'une requête couche par couche, de la connexion à la réponse. |
 | [Référence de l'API](docs/api-reference.md) | Enveloppes, erreurs, codes de statut, chaque endpoint. |
 | [Authentification](docs/authentication.md) | Mots de passe, jetons, sessions, limitation de débit. |
 | [Configuration](docs/configuration.md) | Chaque variable d'environnement. |

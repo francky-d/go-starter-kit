@@ -30,11 +30,12 @@ Chaque réponse porte :
 
 | En-tête | Valeur |
 | --- | --- |
-| `X-Request-Id` | Identifiant de la requête, également écrit dans chaque log qui la concerne. Une valeur fournie par le client est conservée si elle compte de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon une nouvelle est générée. |
+| `X-Request-Id` | Identifiant de la requête, également écrit dans les logs de la requête et de ses erreurs, mais pas dans ceux de GORM ni des services (voir [Ce qui est journalisé](request-lifecycle.md#ce-qui-est-journalisé)). Une valeur fournie par le client est conservée si elle compte de 1 à 64 lettres, chiffres, `.`, `_` ou `-` ; sinon une nouvelle est générée. |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
 | `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` |
 | `Referrer-Policy` | `no-referrer` |
+| `X-XSS-Protection` | `0` |
 
 Envoyez les corps de requête en JSON avec
 `Content-Type: application/json`. Les corps plus grands que
@@ -64,7 +65,7 @@ les échecs de validation et associe à chaque champ invalide ses messages :
 | 404 | `Resource not found.` | La route ou l'enregistrement n'existe pas, ou l'enregistrement appartient à quelqu'un d'autre. |
 | 409 | selon l'erreur | La requête entre en conflit avec l'état actuel. |
 | 413 | `Request Entity Too Large.` | Le corps dépasse `HTTP_BODY_LIMIT`. |
-| 415 | `Unsupported Media Type.` | Le corps n'est pas envoyé en `application/json`. |
+| 415 | `Unsupported Media Type.` | Le `Content-Type` du corps est absent ou inconnu. Le binder d'Echo accepte aussi XML et les formulaires (voir [`requests.Bind`](request-lifecycle.md#requestsbind)). |
 | 422 | `The given data was invalid.` | La validation a échoué ; voir `errors`. |
 | 429 | `Too many requests.` | Une limite de débit est atteinte. L'en-tête `Retry-After` donne le nombre de secondes à attendre. |
 | 500 | `Internal server error.` | Une erreur inattendue s'est produite. |
@@ -269,6 +270,7 @@ curl -s http://localhost:8080/api/v1/me \
 | `200` | Le corps est l'utilisateur. |
 | `401` | `Unauthenticated.` : le jeton est absent, invalide ou expiré, ou son utilisateur n'existe plus. |
 
-Sur un `401`, l'en-tête `WWW-Authenticate` indique s'il faut rafraîchir la
-session ou se reconnecter ; voir
+Sur un `401` du middleware d'authentification, l'en-tête
+`WWW-Authenticate` indique s'il faut rafraîchir la session ou se
+reconnecter ; le `401` d'un utilisateur supprimé ne le porte pas. Voir
 [authentication.md](authentication.md#authentifier-les-requêtes).

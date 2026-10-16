@@ -184,8 +184,10 @@ variables `DB_*` de [configuration.md](configuration.md#base-de-données).
 
 ## Logs des requêtes
 
-Les requêtes plus lentes que `DB_SLOW_QUERY_THRESHOLD` et les requêtes en
-échec sont journalisées en avertissement. Les requêtes journalisées
-montrent des marqueurs (`$1`, `$2`) au lieu des valeurs liées : emails,
-hash de mots de passe et jetons n'arrivent jamais dans les logs. Une
-requête qui ne trouve aucun enregistrement n'est pas journalisée.
+Les requêtes plus lentes que `DB_SLOW_QUERY_THRESHOLD` sont journalisées
+au niveau WARN, et les requêtes en échec au niveau ERROR, même quand le
+client reçoit une erreur 4xx, comme le `409` d'un email déjà pris. Les
+requêtes journalisées montrent des marqueurs (`$1`, `$2`) au lieu des
+valeurs liées : emails, hash de mots de passe et jetons n'arrivent jamais
+dans les logs. Une requête qui ne trouve aucun enregistrement n'est pas
+journalisée.

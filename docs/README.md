@@ -12,7 +12,8 @@ code restent tels qu'ils sont dans le code.
 | Document | Objet |
 | --- | --- |
 | [getting-started.md](getting-started.md) | Prérequis, premiers pas et commandes courantes. |
-| [architecture.md](architecture.md) | Packages, démarrage et arrêt, cycle de vie d'une requête. |
+| [architecture.md](architecture.md) | Packages, démarrage et arrêt, routes. |
+| [request-lifecycle.md](request-lifecycle.md) | Le trajet d'une requête couche par couche, de la connexion à la réponse : middleware, contrôleur, service, repository, erreurs et logs. |
 | [api-reference.md](api-reference.md) | Enveloppes de réponse, format des erreurs, codes de statut et endpoints. |
 | [configuration.md](configuration.md) | Chaque variable d'environnement, sa valeur par défaut et la résolution des valeurs. |
 | [authentication.md](authentication.md) | Mots de passe, jetons d'accès et de rafraîchissement, sessions, requêtes authentifiées et limitation de débit. |

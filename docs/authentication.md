@@ -93,7 +93,7 @@ L'en-tête `WWW-Authenticate` du refus indique au client quoi faire :
 
 Un jeton d'accès reste valide après la suppression de son utilisateur,
 jusqu'à son expiration. Les endpoints qui chargent l'utilisateur courant
-répondent alors `401`.
+répondent alors `401`, sans en-tête `WWW-Authenticate`.
 
 Dans un contrôleur, `middleware.CurrentUserID(c)` renvoie l'identifiant de
 l'utilisateur authentifié. Il n'est disponible que sur les routes placées

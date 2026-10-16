@@ -95,38 +95,13 @@ api.Middleware(d.Authenticated).
 
 ## Cycle de vie d'une requête
 
-Chaque requête traverse d'abord les middleware de base, dans cet ordre :
+Echo choisit la route, puis la requête traverse les middleware de base,
+ceux de sa route, le contrôleur, le service et le repository. Une réponse
+de succès est écrite par le contrôleur ; toute erreur remonte jusqu'à
+`respond.ErrorHandler`, le seul endroit où s'écrivent les corps d'erreur,
+qui n'envoie jamais de détail interne au client.
 
-| Middleware | Effet |
-| --- | --- |
-| Request ID | Conserve un `X-Request-Id` client bien formé, ou en génère un. |
-| Request logger | Un enregistrement de log par requête : méthode, chemin sans query string, route, statut, latence, IP client, identifiant de requête. Les sondes `/health` réussies sont journalisées au niveau debug. |
-| Recover | Transforme un panic en `500` générique et journalise la pile d'appels. |
-| Secure headers | `nosniff`, cadrage `DENY`, une CSP qui interdit tout, `no-referrer`. |
-| CORS | Seulement si `CORS_ALLOWED_ORIGINS` est renseignée. |
-| Body limit | Rejette les corps au-delà de `HTTP_BODY_LIMIT` avec `413`. |
-| Request timeout | Donne au contexte de la requête une échéance de `HTTP_REQUEST_TIMEOUT` ; une requête dont le travail est annulé par l'échéance répond `503`. |
-
-L'IP client vient du pair TCP, ou de `X-Forwarded-For` quand
-`HTTP_TRUST_PROXY` est activée (voir la
-[configuration](configuration.md#derrière-un-reverse-proxy)).
-
-```text
-Requête HTTP
- └─ middleware de base
-     └─ routeur Echo ─ pas de route ? ─────────────┐
-         └─ middleware de route ─ refus ? ─────────┤  limitation de débit, authentification
-             └─ contrôleur                         │
-                 ├─ succès ─ respond.OK / Created  │
-                 └─ return err ────────────────────┤
-                                                   ▼
-                                   respond.ErrorHandler
-                                    ├─ *apperror.Error  → son statut, son message, ses erreurs par champ
-                                    ├─ *echo.HTTPError  → son statut, un message générique
-                                    └─ tout le reste    → 500, message générique
-```
-
-Le gestionnaire d'erreurs est le seul endroit où s'écrivent les corps
-d'erreur. Il journalise les erreurs serveur avec leur cause et n'envoie
-jamais de détail interne au client. Voir la
-[référence de l'API](api-reference.md#erreurs) pour le format.
+[request-lifecycle.md](request-lifecycle.md) suit ce trajet couche par
+couche : l'ordre et l'effet des middleware, la traduction des erreurs à
+chaque couche, l'échéance des requêtes, ce qui est journalisé, et deux
+requêtes pas à pas.
