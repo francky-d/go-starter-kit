@@ -27,6 +27,6 @@ func Baseline(cfg config.Config, log *slog.Logger) []echo.MiddlewareFunc {
 
 	return append(stack,
 		echomiddleware.BodyLimit(cfg.HTTP.BodyLimit),
-		echomiddleware.ContextTimeout(cfg.HTTP.RequestTimeout),
+		RequestTimeout(cfg.HTTP.RequestTimeout),
 	)
 }

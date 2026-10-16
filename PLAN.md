@@ -140,3 +140,9 @@ English translation will follow.
 | # | Task | Commit | Status |
 | --- | --- | --- | --- |
 | 44 | Development environment in containers: Docker and make as the only requirements, `make dev` runs PostgreSQL and the API with live reload, every Go target runs in a `go` container | `build: run the development environment in containers` | done |
+
+## Fixes
+
+| # | Task | Commit | Status |
+| --- | --- | --- | --- |
+| 45 | A query cut by `HTTP_REQUEST_TIMEOUT` answers `500`: the service's `apperror.Internal` hides the timeout's `503` (found while documenting the request lifecycle) | `fix(http): answer 503 when the request deadline cuts the work` | done |

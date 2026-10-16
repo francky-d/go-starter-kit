@@ -2,6 +2,8 @@ package middleware_test
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/francky-d/go-starter-kit/internal/apperror"
 	"github.com/francky-d/go-starter-kit/internal/config"
 	"github.com/francky-d/go-starter-kit/internal/http/middleware"
 	"github.com/francky-d/go-starter-kit/internal/http/respond"
@@ -49,6 +52,19 @@ func registerTestRoutes(e *echo.Echo) {
 	e.GET("/slow", func(c echo.Context) error {
 		<-c.Request().Context().Done()
 		return c.Request().Context().Err()
+	})
+	// Like a service whose query was cut by the deadline.
+	e.GET("/slow-query", func(c echo.Context) error {
+		<-c.Request().Context().Done()
+		return apperror.Internal(fmt.Errorf("find user: %w", c.Request().Context().Err()))
+	})
+	// Like a service whose own outbound call timed out, well before the
+	// request deadline.
+	e.GET("/inner-timeout", func(c echo.Context) error {
+		ctx, cancel := context.WithTimeout(c.Request().Context(), time.Millisecond)
+		defer cancel()
+		<-ctx.Done()
+		return apperror.Internal(fmt.Errorf("call partner: %w", ctx.Err()))
 	})
 	e.POST("/upload", func(c echo.Context) error {
 		var body bytes.Buffer
@@ -153,6 +169,20 @@ func TestBaseline_AnswersSlowRequestsWith503(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
 	assert.JSONEq(t, `{"message":"Service unavailable."}`, response.Body.String())
+}
+
+func TestBaseline_AnswersWith503WhenTheDeadlineCutsWrappedWork(t *testing.T) {
+	response := newServer(t, nil).get("/slow-query")
+
+	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
+	assert.JSONEq(t, `{"message":"Service unavailable."}`, response.Body.String())
+}
+
+func TestBaseline_KeepsTheStatusOfADeadlineTheHandlerSet(t *testing.T) {
+	response := newServer(t, nil).get("/inner-timeout")
+
+	assert.Equal(t, http.StatusInternalServerError, response.Code)
+	assert.JSONEq(t, `{"message":"Internal server error."}`, response.Body.String())
 }
 
 func preflight(origin string) *http.Request {

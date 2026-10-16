@@ -34,8 +34,7 @@ func ErrorHandler(log *slog.Logger) echo.HTTPErrorHandler {
 }
 
 // toAppError looks for an *apperror.Error first, so an *echo.HTTPError whose
-// Internal field holds one answers the inner status. Echo never builds such
-// a chain itself.
+// Internal field holds one answers the inner status.
 func toAppError(err error) *apperror.Error {
 	if appErr, ok := apperror.As(err); ok {
 		return appErr

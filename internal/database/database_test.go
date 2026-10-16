@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -26,6 +27,20 @@ func TestConnect_OpensAConfiguredPool(t *testing.T) {
 	pool, err := db.DB()
 	require.NoError(t, err)
 	assert.Equal(t, cfg.MaxOpenConnections, pool.Stats().MaxOpenConnections)
+}
+
+// The request timeout answers 503 only if a query cut by the deadline keeps
+// context.DeadlineExceeded in its error chain.
+func TestConnect_QueriesCutByADeadlineReportIt(t *testing.T) {
+	db, err := database.Connect(t.Context(), testutil.DatabaseConfig(), logging.Discard())
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, database.Close(db)) })
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+
+	err = db.WithContext(ctx).Exec("SELECT pg_sleep(5)").Error
+
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestConnect_FailsFastWithoutLeakingThePassword(t *testing.T) {
